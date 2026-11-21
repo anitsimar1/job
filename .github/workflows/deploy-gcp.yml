@@ -29,6 +29,7 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: maven
+          cache-dependency-path: backend/pom.xml
 
       - name: Run Spring Boot unit & security tests
         working-directory: backend
@@ -39,8 +40,10 @@ jobs:
         with:
           node-version: "22"
           cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Typecheck and build React frontend
+        working-directory: .
         run: |
           npm ci
           npm run lint

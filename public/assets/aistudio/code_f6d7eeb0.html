@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-surface": "#0b1c30", "inverse-surface": "#213145", "on-secondary-fixed-variant": "#003ea8", "on-error": "#ffffff", "primary-fixed": "#dce1ff", "surface-container-high": "#dce9ff", "surface-bright": "#f8f9ff", "surface-container-highest": "#d3e4fe", "on-tertiary": "#ffffff", "on-primary": "#ffffff", "surface-container-lowest": "#ffffff", "on-secondary-fixed": "#00174b", "primary": "#00236f", "error": "#ba1a1a", "on-error-container": "#93000a", "inverse-on-surface": "#eaf1ff", "tertiary": "#00311f", "secondary": "#0051d5", "secondary-fixed-dim": "#b4c5ff", "secondary-fixed": "#dbe1ff", "outline-variant": "#c5c5d3", "surface-tint": "#4059aa", "background": "#f8f9ff", "tertiary-container": "#004a31", "secondary-container": "#316bf3", "on-primary-container": "#90a8ff", "on-tertiary-fixed-variant": "#005236", "surface-container": "#e5eeff", "on-secondary": "#ffffff", "error-container": "#ffdad6", "surface-variant": "#d3e4fe", "surface-container-low": "#eff4ff", "surface": "#f8f9ff", "on-surface-variant": "#444651", "tertiary-fixed-dim": "#4edea3", "on-tertiary-fixed": "#002113", "primary-container": "#1e3a8a", "tertiary-fixed": "#6ffbbe", "on-tertiary-container": "#27c38a", "primary-fixed-dim": "#b6c4ff", "outline": "#757682", "on-primary-fixed-variant": "#264191", "on-background": "#0b1c30", "on-primary-fixed": "#00164e", "surface-dim": "#cbdbf5", "on-secondary-container": "#fefcff", "inverse-primary": "#b6c4ff" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-sm": "0.5rem", "gutter-sm": "1rem", "margin": "1.5rem", "space-md": "1rem", "space-2xl": "3rem", "space-xs": "0.375rem", "space-lg": "1.5rem", "space-2xs": "0.25rem", "margin-lg": "3rem", "space-xl": "2rem", "margin-sm": "1rem", "gutter": "1.5rem", "gutter-lg": "2rem" }, fontFamily: { "label-sm": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "headline-xl": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "display-lg": ["Plus Jakarta Sans"], "body-lg": ["Inter"], "headline-xl-mobile": ["Plus Jakarta Sans"], "label-lg": ["Inter"], "body-sm": ["Inter"], "label-md": ["Inter"], "body-md": ["Inter"], "display-lg-mobile": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"] }, fontSize: { "label-sm": ["0.6875rem", { lineHeight: "0.875rem", letterSpacing: "0.03em", fontWeight: "600" }], "headline-lg": ["1.5rem", { lineHeight: "2rem", letterSpacing: "-0.015em", fontWeight: "600" }], "headline-xl": ["2.25rem", { lineHeight: "2.75rem", letterSpacing: "-0.02em", fontWeight: "700" }], "headline-sm": ["1.125rem", { lineHeight: "1.5rem", letterSpacing: "-0.005em", fontWeight: "600" }], "display-lg": ["3rem", { lineHeight: "3.5rem", letterSpacing: "-0.025em", fontWeight: "700" }], "body-lg": ["1.125rem", { lineHeight: "1.75rem", fontWeight: "400" }], "headline-xl-mobile": ["1.75rem", { lineHeight: "2.25rem", letterSpacing: "-0.015em", fontWeight: "600" }], "label-lg": ["0.875rem", { lineHeight: "1.25rem", letterSpacing: "0.01em", fontWeight: "600" }], "body-sm": ["0.875rem", { lineHeight: "1.25rem", fontWeight: "400" }], "label-md": ["0.75rem", { lineHeight: "1rem", letterSpacing: "0.02em", fontWeight: "600" }], "body-md": ["1rem", { lineHeight: "1.5rem", fontWeight: "400" }], "display-lg-mobile": ["2rem", { lineHeight: "2.5rem", letterSpacing: "-0.02em", fontWeight: "700" }], "headline-md": ["1.25rem", { lineHeight: "1.75rem", letterSpacing: "-0.01em", fontWeight: "600" }] } } } };</script><style>@layer base{html,body{width:100%;margin:0;padding:0;min-height:100vh;}body{overscroll-behavior-y:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}#drawer-overlay{transition:opacity 0.25s ease-in-out;}#nav-drawer{transition:transform 0.3s cubic-bezier(0.16,1,0.3,1);}</style><style>body { min-height: max(884px, 100dvh); }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface font-body-md flex flex-col min-h-screen relative antialiased"><header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-gutter-sm flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm"><button aria-label="Open drawer" class="w-11 h-11 flex items-center justify-center rounded-lg text-on-surface hover:bg-surface-container active:scale-95 transition-all" id="drawer-open-btn" type="button"><span class="material-symbols-outlined text-[24px]">menu</span></button><div class="flex items-center gap-space-xs"><img alt="JobConnect Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrDoqPelzQYMC2rHkSVJUkLaEFJe-Jv-9tGCAvyXYG0Tbf05Tm_Nji9JPKpARH8AiupBU8xh_MxCHU2RUISJKnyAX50GFWXYL5D0Cu2d6AmYmXlCJsOuvmOdb3ec_DKp_6YvApbcpuPj7L8fEBb5fN1lgZelav7NECXKzN00KG-amiofeNu7kvaDSMy_dUWEOtv0UOSDPnUH7PAk8rQouZEb__6JXFF2drRl0O_qRQy4"/><span class="font-headline-sm text-headline-sm font-bold text-primary tracking-tight">JobConnect</span></div></div><div class="flex items-center gap-space-xs"><span class="font-label-md text-label-md text-on-surface-variant hidden sm:inline-block max-w-[120px] truncate">Job Details</span><button aria-label="Notifications" class="relative w-11 h-11 flex items-center justify-center rounded-lg text-on-surface hover:bg-surface-container active:scale-95 transition-all" type="button"><span class="material-symbols-outlined text-[24px]">notifications</span><span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-error ring-2 ring-surface"></span></button><a class="w-11 h-11 flex items-center justify-center rounded-full hover:ring-2 hover:ring-secondary/30 transition-all" data-path="profile-resume" href="#"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzIFUVWxVlsrpqlEAZtHrDApplGRUt34NK-HGmOwslCK2Y6y4z_ZxK6J7TCic4HL4aUyAuDuJDRVBjZg5QFxFl8WggeXtr-Y1jht3pv7wRZuvPTG-jHDXey-4e5tqrO5SL8CPJbx2bDKQbTIoBW5wZH7PSelogL5nkrqD_70WsQnujmm5nrJSg-zMVNyc414E43go9ToVGQdLxV631KR4miWk_OwJ0VWQSGbX8xsM"/></a></div></div></header><div class="fixed inset-0 z-50 bg-on-surface/40 backdrop-blur-sm pointer-events-none opacity-0 transition-opacity duration-300" id="drawer-backdrop"><div class="fixed top-0 left-0 bottom-0 w-72 max-w-[85vw] bg-surface-container-lowest shadow-[0_20px_25px_-5px_rgba(15,23,42,0.15)] flex flex-col -translate-x-full pt-safe pb-safe z-50" id="nav-drawer"><div class="h-16 px-gutter-sm flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="JobConnect Logo" class="h-7 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrDoqPelzQYMC2rHkSVJUkLaEFJe-Jv-9tGCAvyXYG0Tbf05Tm_Nji9JPKpARH8AiupBU8xh_MxCHU2RUISJKnyAX50GFWXYL5D0Cu2d6AmYmXlCJsOuvmOdb3ec_DKp_6YvApbcpuPj7L8fEBb5fN1lgZelav7NECXKzN00KG-amiofeNu7kvaDSMy_dUWEOtv0UOSDPnUH7PAk8rQouZEb__6JXFF2drRl0O_qRQy4"/><span class="font-headline-sm text-headline-sm font-bold text-primary">JobConnect</span></div><button aria-label="Close drawer" class="w-11 h-11 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container active:scale-95 transition-all" id="drawer-close-btn" type="button"><span class="material-symbols-outlined text-[22px]">close</span></button></div><div class="px-gutter-sm py-space-sm flex items-center gap-space-md bg-surface-container-low mx-gutter-sm rounded-xl"><img alt="Profile" class="w-10 h-10 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzIFUVWxVlsrpqlEAZtHrDApplGRUt34NK-HGmOwslCK2Y6y4z_ZxK6J7TCic4HL4aUyAuDuJDRVBjZg5QFxFl8WggeXtr-Y1jht3pv7wRZuvPTG-jHDXey-4e5tqrO5SL8CPJbx2bDKQbTIoBW5wZH7PSelogL5nkrqD_70WsQnujmm5nrJSg-zMVNyc414E43go9ToVGQdLxV631KR4miWk_OwJ0VWQSGbX8xsM"/><div class="flex flex-col min-w-0 flex-1"><span class="font-label-lg text-label-lg text-on-surface truncate">Devin Vance</span><span class="font-label-sm text-label-sm text-on-surface-variant truncate">Executive Candidate</span></div></div><nav class="flex-1 overflow-y-auto px-gutter-sm py-space-md flex flex-col gap-space-2xs" data-active-classes="bg-primary-container text-on-primary font-semibold"><a class="flex items-center gap-space-md px-gutter-sm h-12 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-label-lg text-label-lg" data-path="home" href="#"><span class="material-symbols-outlined text-[22px]">home</span><span>Home</span></a><a class="flex items-center gap-space-md px-gutter-sm h-12 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-label-lg text-label-lg" data-path="find-jobs" href="#"><span class="material-symbols-outlined text-[22px]">search</span><span>Find Jobs</span></a><a class="flex items-center gap-space-md px-gutter-sm h-12 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-label-lg text-label-lg" data-path="my-applications" href="#"><span class="material-symbols-outlined text-[22px]">assignment</span><span>My Applications</span></a><a class="flex items-center gap-space-md px-gutter-sm h-12 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-label-lg text-label-lg" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[22px]">grid_view</span><span>Dashboard</span></a><a class="flex items-center gap-space-md px-gutter-sm h-12 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-label-lg text-label-lg" data-path="profile-resume" href="#"><span class="material-symbols-outlined text-[22px]">person</span><span>Profile &amp; Resume</span></a><div class="h-px bg-outline-variant/30 my-space-xs"></div><a class="flex items-center gap-space-md px-gutter-sm h-12 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-label-lg text-label-lg" data-path="admin-portal" href="#"><span class="material-symbols-outlined text-[22px]">admin_panel_settings</span><span>Admin Portal</span></a></nav><div class="p-gutter-sm mt-auto"><div class="bg-surface-container px-space-md py-space-sm rounded-lg flex items-center justify-between"><span class="font-label-sm text-label-sm text-on-surface-variant">v2.4 Executive</span><span class="font-label-sm text-label-sm text-tertiary-fixed-dim bg-tertiary px-space-xs py-0.5 rounded-full">PRO</span></div></div></div></div><main class="flex-1 flex flex-col relative w-full pt-16 pb-20 bg-surface"><div class="flex flex-col w-full pb-24">
+<!-- Top Navigation Sub-Bar & Breadcrumbs -->
+<div class="w-full px-gutter-sm pt-space-xs pb-space-sm flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<button aria-label="Go back" class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors active:scale-95" type="button">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+</button>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate max-w-[170px]">Engineering • Frontend</span>
+</div>
+<div class="flex items-center gap-space-2xs">
+<button aria-label="Save Job" class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-secondary transition-all active:scale-90" id="bookmark-btn" type="button">
+<span class="material-symbols-outlined text-[20px]" id="bookmark-icon">bookmark_border</span>
+</button>
+<button aria-label="Share Job" class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-secondary transition-all active:scale-90" id="share-btn" type="button">
+<span class="material-symbols-outlined text-[20px]">share</span>
+</button>
+</div>
+</div>
+<div class="px-gutter-sm flex flex-col gap-space-md">
+<!-- Company Card Header -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm relative overflow-hidden">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-13 h-13 rounded-xl bg-primary-container text-on-primary flex items-center justify-center shadow-sm p-space-2xs">
+<span class="material-symbols-outlined text-[28px]">cloud_sync</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-2xs">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface tracking-tight">Apex Cloud Systems</span>
+<span class="inline-flex items-center justify-center text-tertiary-fixed-dim bg-tertiary w-4 h-4 rounded-full" title="Verified Employer">
+<span class="material-symbols-outlined text-[12px] font-bold">verified</span>
+</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Cloud Infrastructure • Series B</span>
+</div>
+</div>
+<span class="px-space-xs py-0.5 rounded-full bg-surface-container font-label-sm text-label-sm text-secondary font-medium">Actively Hiring</span>
+</div>
+<div class="flex flex-wrap items-center gap-y-1 gap-x-space-md pt-space-2xs font-body-sm text-body-sm text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-outline">group</span>
+<span>250–500 employees</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-outline">location_on</span>
+<span>San Francisco, CA (Remote Friendly)</span>
+</div>
+</div>
+</div>
+<!-- Job Title & Headline -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="flex flex-col gap-1">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface font-bold leading-tight">
+          Senior Frontend Engineer – React / Next.js
+        </h1>
+<div class="flex items-center gap-space-sm font-label-sm text-label-sm text-on-surface-variant pt-1">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+            Posted 2 days ago
+          </span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="flex items-center gap-1 text-secondary font-medium">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+            24 applicants
+          </span>
+</div>
+</div>
+<!-- Key Metadata 2x2 Grid -->
+<div class="grid grid-cols-2 gap-space-xs pt-space-xs">
+<div class="p-space-sm rounded-lg bg-surface-container-low flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-tertiary-container">payments</span>
+            Compensation
+          </span>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">$160k – $190k</span>
+<span class="font-label-sm text-label-sm text-on-tertiary-container font-semibold">+ 0.15% Equity</span>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-low flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-secondary">public</span>
+            Workplace
+          </span>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">Remote</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">US • EU Friendly</span>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-low flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary">work</span>
+            Job Type
+          </span>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">Full-time</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Permanent W2</span>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-low flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary-container">psychology</span>
+            Experience
+          </span>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">Senior Level</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">5+ Years Required</span>
+</div>
+</div>
+</div>
+<!-- AI Profile Match Card -->
+<div class="bg-gradient-to-br from-primary-container via-primary to-primary-container text-on-primary p-space-md rounded-xl shadow-md relative overflow-hidden">
+<div class="flex items-center justify-between mb-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="w-6 h-6 rounded-lg bg-surface-container-lowest/15 flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px] text-tertiary-fixed">auto_awesome</span>
+</span>
+<span class="font-label-lg text-label-lg font-semibold tracking-wide text-primary-fixed">JobConnect AI Match</span>
+</div>
+<div class="px-space-xs py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm font-bold">
+          96% MATCH
+        </div>
+</div>
+<p class="font-body-sm text-body-sm text-primary-fixed-dim leading-relaxed">
+        Your verified experience in <span class="text-surface-container-lowest font-medium">React 19, Next.js</span>, and architectural design systems strongly correlates with Apex Cloud’s core stack.
+      </p>
+<div class="mt-space-sm pt-space-xs border-t-0 flex items-center justify-between bg-surface-container-lowest/10 p-space-xs rounded-lg">
+<div class="flex items-center gap-1 text-tertiary-fixed">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span class="font-label-sm text-label-sm">High Profile Alignment</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary-fixed underline cursor-pointer">View breakdown</span>
+</div>
+</div>
+<!-- Navigation Segmented Tabs -->
+<div class="w-full flex items-center gap-space-2xs overflow-x-auto pb-1" role="tablist">
+<button class="tab-btn px-space-md py-space-xs rounded-full bg-primary-container text-on-primary font-label-md text-label-md whitespace-nowrap shadow-sm transition-all" data-tab="tab-overview">Overview</button>
+<button class="tab-btn px-space-md py-space-xs rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md whitespace-nowrap hover:bg-surface-container-high transition-all" data-tab="tab-responsibilities">Responsibilities</button>
+<button class="tab-btn px-space-md py-space-xs rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md whitespace-nowrap hover:bg-surface-container-high transition-all" data-tab="tab-requirements">Requirements</button>
+<button class="tab-btn px-space-md py-space-xs rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md whitespace-nowrap hover:bg-surface-container-high transition-all" data-tab="tab-perks">Perks &amp; Benefits</button>
+</div>
+<!-- Tab Section: Overview -->
+<div class="tab-content flex flex-col gap-space-md" id="tab-overview">
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface flex items-center gap-space-xs">
+<span class="w-1.5 h-4 bg-secondary rounded-full"></span>
+          About the Role
+        </h2>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+          Apex Cloud Systems builds distributed multi-cloud orchestration tooling for enterprise AI pipelines. We are seeking a foundational Senior Frontend Engineer to spearhead our Next.js dashboard surfaces, real-time telemetry visualizations, and scalable web platforms.
+        </p>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+          You will directly partner with the founding engineering cohort and design system architects to transform mission-critical backend complexity into silky, responsive micro-interactions.
+        </p>
+</div>
+<!-- Tech Stack Cluster -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface flex items-center gap-space-xs">
+<span class="w-1.5 h-4 bg-secondary rounded-full"></span>
+          Core Technology Stack
+        </h2>
+<div class="flex flex-wrap gap-space-xs">
+<span class="px-space-sm py-1 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold">React 19</span>
+<span class="px-space-sm py-1 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold">Next.js 15 (App Router)</span>
+<span class="px-space-sm py-1 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold">TypeScript</span>
+<span class="px-space-sm py-1 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold">Tailwind CSS</span>
+<span class="px-space-sm py-1 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold">GraphQL • Apollo</span>
+<span class="px-space-sm py-1 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold">Vitest • Playwright</span>
+<span class="px-space-sm py-1 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold">Turborepo</span>
+<span class="px-space-sm py-1 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold">GitHub Actions CI/CD</span>
+</div>
+</div>
+</div>
+<!-- Tab Section: Responsibilities -->
+<div class="tab-content flex flex-col gap-space-md" id="tab-responsibilities">
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface flex items-center gap-space-xs">
+<span class="w-1.5 h-4 bg-secondary rounded-full"></span>
+          Key Responsibilities
+        </h2>
+<ul class="flex flex-col gap-space-sm">
+<li class="flex items-start gap-space-sm">
+<span class="w-6 h-6 rounded-lg bg-surface-container-high text-secondary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]">architecture</span>
+</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Architect Next.js Frontends</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Design, construct, and deploy resilient React components leveraging server components (RSC), SSR, and modern streaming.</p>
+</div>
+</li>
+<li class="flex items-start gap-space-sm">
+<span class="w-6 h-6 rounded-lg bg-surface-container-high text-secondary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]">speed</span>
+</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Optimize Core Web Vitals</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Maintain sub-second first-contentful paint, high runtime efficiency, and instantaneous client side state updates.</p>
+</div>
+</li>
+<li class="flex items-start gap-space-sm">
+<span class="w-6 h-6 rounded-lg bg-surface-container-high text-secondary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]">palette</span>
+</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Design System Custodianship</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Collaborate intimately with UX product designers to enrich our internal React UI kit, token architectures, and accessibility criteria (WCAG AAA).</p>
+</div>
+</li>
+<li class="flex items-start gap-space-sm">
+<span class="w-6 h-6 rounded-lg bg-surface-container-high text-secondary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]">terminal</span>
+</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Engineered Code Quality</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Conduct rigorous peer code reviews, institute automated Playwright regressions, and mentor mid-level software contributors.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<!-- Tab Section: Requirements -->
+<div class="tab-content flex flex-col gap-space-md" id="tab-requirements">
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface flex items-center gap-space-xs">
+<span class="w-1.5 h-4 bg-secondary rounded-full"></span>
+          What We Expect
+        </h2>
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[20px] shrink-0 mt-0.5">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface-variant">5+ years crafting enterprise SaaS web applications using modern JavaScript/TypeScript pipelines.</span>
+</div>
+<div class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[20px] shrink-0 mt-0.5">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface-variant">Demonstrable production experience with Next.js App Router, caching strategies, and edge runtime rendering.</span>
+</div>
+<div class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[20px] shrink-0 mt-0.5">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface-variant">Proven proficiency with real-time state synchronization via WebSockets, SSE, and GraphQL.</span>
+</div>
+<div class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[20px] shrink-0 mt-0.5">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface-variant">Strong foundation in asynchronous testing methodologies (Vitest, Mock Service Worker, Cypress/Playwright).</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Tab Section: Perks & Benefits -->
+<div class="tab-content flex flex-col gap-space-md" id="tab-perks">
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface flex items-center gap-space-xs">
+<span class="w-1.5 h-4 bg-secondary rounded-full"></span>
+          Perks &amp; Benefits
+        </h2>
+<div class="grid grid-cols-1 gap-space-xs">
+<div class="p-space-sm rounded-lg bg-surface-container-low flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">savings</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">401(k) Retirement Plan</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Up to 5% dollar-for-dollar employer match</span>
+</div>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-low flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">flight_takeoff</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Unlimited Paid Time Off</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Mandatory minimum 3 weeks annually + wellness days</span>
+</div>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-low flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">school</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">$3,000 Annual Learning Budget</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">For tech conferences, certifications, and literature</span>
+</div>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-low flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">desk</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Home Office Setup Stipend</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">$1,500 initial setup + $100/mo coworking stipend</span>
+</div>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-low flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">health_and_safety</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Premium Health Coverage</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">100% paid Medical, Dental, and Vision premiums</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Team & Hiring Manager Spotlight -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface flex items-center gap-space-xs">
+<span class="w-1.5 h-4 bg-secondary rounded-full"></span>
+        Meet the Hiring Team
+      </h2>
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low">
+<div class="flex items-center gap-space-sm">
+<img class="w-12 h-12 rounded-full object-cover shadow-sm" data-alt="Close up professional studio portrait of Marcus Vance, Vice President of Engineering, wearing a navy modern blazer with warm confident expression, high executive aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQdC-LeCP9RJ-f8am6XS0q-6W0og5uJTID0N_LBtZ6A7oYP1-CuQQ6tCmFHrjUdnLlxNf88RyJ5h9Q7WPpeHsMFWHpLm95Xa64rCWLF0337IAR3vAEbix7y-h9MGY3sXgFa6lRsr9rHbWrmCdWPn5_Ktc8cSFAg4Nl0gkOtkwCTlz3pFkZATa0zMi5A97A7TBx2f5VJe5RPCSj71UE2JdpL3EkIB5j69CpPjZRUGQ"/>
+<div class="flex flex-col">
+<div class="flex items-center gap-1">
+<span class="font-label-lg text-label-lg text-on-surface font-bold">Marcus Vance</span>
+<span class="text-secondary inline-flex" title="LinkedIn Profile Connected">
+<span class="material-symbols-outlined text-[16px]">verified_user</span>
+</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">VP of Engineering • Ex-Stripe</span>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-sm text-label-sm text-tertiary-fixed-dim bg-tertiary px-space-xs py-0.5 rounded-full font-bold">Active</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">~24h response</span>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant italic px-space-xs">
+        “We value engineers who take deep ownership of user experience, enjoy micro-optimizations, and write clean, communicative software.”
+      </p>
+</div>
+<!-- Location & Workspace Peek -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface flex items-center gap-space-xs">
+<span class="w-1.5 h-4 bg-secondary rounded-full"></span>
+          Office Hub
+        </h2>
+<span class="font-label-sm text-label-sm text-secondary font-semibold">San Francisco, CA</span>
+</div>
+<div class="w-full h-36 bg-cover bg-center rounded-lg shadow-inner relative overflow-hidden" data-location="Mission District, San Francisco, CA" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAPSKboiuHx5UTIUiXwJOOG3EexpD8fyAZffBYV8CZaqBEZHaifgaVNzNj954xmJKTZzBSYVyW3PifaGED6EXX8sNmNwdrnAqSTzH01_DMTHwtyCEHTrpzPUYAmMVbMcURms1KrL60xbPg166KfxNpV-sAeVK3dbMqC2p3fNdg-Qd8xtKswcW9XYLJieSkdYaOgNX5HD8nXt9agUDDwOkrYyJivbumjnF1L3dSLAgM');">
+<div class="absolute inset-0 bg-primary/20 backdrop-blur-[1px]"></div>
+<div class="absolute bottom-2 left-2 bg-surface-container-lowest/90 px-space-sm py-0.5 rounded-md flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[14px] text-secondary">pin_drop</span>
+<span class="font-label-sm text-label-sm text-on-surface font-medium">Mission Bay Technology Hub</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Sticky Bottom Action Bar -->
+<div class="fixed bottom-16 left-0 w-full z-40 bg-surface-container-lowest/95 backdrop-blur-xl px-gutter-sm py-space-sm shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
+<div class="max-w-md mx-auto flex items-center gap-space-sm">
+<button aria-label="Save this role" class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high active:scale-95 transition-all shrink-0" id="favorite-quick-btn" type="button">
+<span class="material-symbols-outlined text-[22px]" id="quick-fav-icon">star_border</span>
+</button>
+<a class="flex-1 h-12 rounded-lg bg-primary-container hover:bg-secondary text-on-primary flex items-center justify-center gap-space-xs font-label-lg text-label-lg font-bold shadow-md active:scale-[0.98] transition-all" data-path="apply-job" href="#">
+<span>Apply Now</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</a>
+</div>
+</div>
+</div>
+<script>
+  (function () {
+    // Interactive Tab Switching
+    const tabs = document.querySelectorAll('.tab-btn');
+    const contents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', function () {
+        const targetId = this.getAttribute('data-tab');
+
+        tabs.forEach((t) => {
+          t.classList.remove('bg-primary-container', 'text-on-primary', 'shadow-sm');
+          t.classList.add('bg-surface-container', 'text-on-surface-variant');
+        });
+
+        this.classList.remove('bg-surface-container', 'text-on-surface-variant');
+        this.classList.add('bg-primary-container', 'text-on-primary', 'shadow-sm');
+
+        // Scroll gracefully to target view section
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) {
+          targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // Bookmark Micro-interaction
+    const bookmarkBtn = document.getElementById('bookmark-btn');
+    const bookmarkIcon = document.getElementById('bookmark-icon');
+    let isBookmarked = false;
+
+    if (bookmarkBtn && bookmarkIcon) {
+      bookmarkBtn.addEventListener('click', function () {
+        isBookmarked = !isBookmarked;
+        if (isBookmarked) {
+          bookmarkIcon.textContent = 'bookmark';
+          bookmarkIcon.style.fontVariationSettings = "'FILL' 1";
+          bookmarkBtn.classList.add('text-secondary');
+        } else {
+          bookmarkIcon.textContent = 'bookmark_border';
+          bookmarkIcon.style.fontVariationSettings = "'FILL' 0";
+          bookmarkBtn.classList.remove('text-secondary');
+        }
+      });
+    }
+
+    // Quick Favorite Toggle
+    const favBtn = document.getElementById('favorite-quick-btn');
+    const favIcon = document.getElementById('quick-fav-icon');
+    let isFav = false;
+
+    if (favBtn && favIcon) {
+      favBtn.addEventListener('click', function () {
+        isFav = !isFav;
+        if (isFav) {
+          favIcon.textContent = 'star';
+          favIcon.style.fontVariationSettings = "'FILL' 1";
+          favBtn.classList.add('text-secondary');
+        } else {
+          favIcon.textContent = 'star_border';
+          favIcon.style.fontVariationSettings = "'FILL' 0";
+          favBtn.classList.remove('text-secondary');
+        }
+      });
+    }
+
+    // Share Feedback
+    const shareBtn = document.getElementById('share-btn');
+    if (shareBtn) {
+      shareBtn.addEventListener('click', function () {
+        if (navigator.share) {
+          navigator.share({
+            title: 'Senior Frontend Engineer at Apex Cloud Systems',
+            url: window.location.href
+          }).catch(() => {});
+        } else {
+          shareBtn.classList.add('text-tertiary-container');
+          setTimeout(() => {
+            shareBtn.classList.remove('text-tertiary-container');
+          }, 1500);
+        }
+      });
+    }
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_-1px_8px_rgba(0,0,0,0.04)]" data-active-classes="text-secondary font-bold"><div class="flex justify-around items-center h-16 px-gutter-sm max-w-md mx-auto"><a class="flex flex-col items-center justify-center min-w-[56px] h-12 rounded-lg text-on-surface-variant hover:text-on-surface active:scale-95 transition-all" data-path="home" href="#"><span class="material-symbols-outlined text-[24px]">home</span><span class="font-label-sm text-label-sm mt-0.5">Home</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-12 rounded-lg text-on-surface-variant hover:text-on-surface active:scale-95 transition-all" data-path="find-jobs" href="#"><span class="material-symbols-outlined text-[24px]">travel_explore</span><span class="font-label-sm text-label-sm mt-0.5">Search</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-12 rounded-lg text-on-surface-variant hover:text-on-surface active:scale-95 transition-all" data-path="my-applications" href="#"><span class="material-symbols-outlined text-[24px]">work_outline</span><span class="font-label-sm text-label-sm mt-0.5">Applications</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-12 rounded-lg text-on-surface-variant hover:text-on-surface active:scale-95 transition-all" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[24px]">dashboard</span><span class="font-label-sm text-label-sm mt-0.5">Dashboard</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-12 rounded-lg text-on-surface-variant hover:text-on-surface active:scale-95 transition-all" data-path="profile-resume" href="#"><span class="material-symbols-outlined text-[24px]">account_circle</span><span class="font-label-sm text-label-sm mt-0.5">Profile</span></a></div></nav><script>(function(){const b=document.getElementById("drawer-backdrop"),d=document.getElementById("nav-drawer"),o=document.getElementById("drawer-open-btn"),c=document.getElementById("drawer-close-btn");function open(){b.classList.remove("pointer-events-none","opacity-0");b.classList.add("opacity-100");d.classList.remove("-translate-x-full");d.classList.add("translate-x-0");}function close(){b.classList.add("opacity-0");b.classList.remove("opacity-100");d.classList.add("-translate-x-full");d.classList.remove("translate-x-0");setTimeout(()=>{b.classList.add("pointer-events-none");},300);}if(o)o.addEventListener("click",open);if(c)c.addEventListener("click",close);if(b)b.addEventListener("click",function(e){if(e.target===b)close();});})();</script></body></html>

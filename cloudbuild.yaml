@@ -1,0 +1,146 @@
+substitutions:
+  _REGION: asia-northeast1
+  _AR_REPO: jobconnect
+  _SQL_INSTANCE: jobconnect-mysql
+  _DB_NAME: jobconnect
+  _DB_USER: jobconnect_app
+  _BACKEND_SERVICE: jobconnect-backend
+  _FRONTEND_SERVICE: jobconnect-frontend
+  _RUNTIME_SA: jobconnect-backend-sa
+  _IMAGE_TAG: latest
+  _EXTRA_CORS_ORIGINS: https://ais-dev-gipkcu5tiwi55u7jym4mob-898921356034.asia-northeast1.run.app,https://ais-pre-gipkcu5tiwi55u7jym4mob-898921356034.asia-northeast1.run.app
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  # 1. Build Spring Boot backend Docker image and push to Artifact Registry
+  - id: build-backend
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - backend/Dockerfile
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/jobconnect-backend:${_IMAGE_TAG}
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/jobconnect-backend:latest
+      - backend
+
+  - id: push-backend
+    name: gcr.io/cloud-builders/docker
+    waitFor: ["build-backend"]
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/jobconnect-backend
+
+  # 2. Deploy Spring Boot backend to Cloud Run with Cloud SQL & Secret Manager
+  - id: deploy-backend
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    waitFor: ["push-backend"]
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+        JDBC_URL="jdbc:mysql:///${_DB_NAME}?cloudSqlInstance=${PROJECT_ID}:${_REGION}:${_SQL_INSTANCE}&socketFactory=com.google.cloud.sql.mysql.SocketFactory&createDatabaseIfNotExist=true&serverTimezone=UTC"
+        RUNTIME_SA_EMAIL="${_RUNTIME_SA}@${PROJECT_ID}.iam.gserviceaccount.com"
+
+        EXISTING_FRONTEND_URL="$(gcloud run services describe "${_FRONTEND_SERVICE}" --region="${_REGION}" --format='value(status.url)' 2>/dev/null || true)"
+        CORS_VALUE="${_EXTRA_CORS_ORIGINS}"
+        REDIRECT_TARGET="https://ais-pre-gipkcu5tiwi55u7jym4mob-898921356034.asia-northeast1.run.app/oauth/callback"
+        if [[ -n "$${EXISTING_FRONTEND_URL}" ]]; then
+          CORS_VALUE="$${EXISTING_FRONTEND_URL},${_EXTRA_CORS_ORIGINS}"
+          REDIRECT_TARGET="$${EXISTING_FRONTEND_URL}/oauth/callback"
+        fi
+
+        gcloud run deploy "${_BACKEND_SERVICE}" \
+          --image="${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/jobconnect-backend:${_IMAGE_TAG}" \
+          --region="${_REGION}" \
+          --platform=managed \
+          --allow-unauthenticated \
+          --port=8080 \
+          --memory=1Gi \
+          --service-account="$${RUNTIME_SA_EMAIL}" \
+          --add-cloudsql-instances="${PROJECT_ID}:${_REGION}:${_SQL_INSTANCE}" \
+          --set-env-vars="^@^SPRING_PROFILES_ACTIVE=prod@DB_USERNAME=${_DB_USER}@DB_URL=$${JDBC_URL}@APP_CORS_ALLOWED_ORIGINS=$${CORS_VALUE}@APP_FRONTEND_AUTH_REDIRECT_URI=$${REDIRECT_TARGET}" \
+          --set-secrets="DB_PASSWORD=jobconnect-db-password:latest,JWT_SECRET=jobconnect-jwt-secret:latest,GOOGLE_CLIENT_ID=jobconnect-google-client-id:latest,GOOGLE_CLIENT_SECRET=jobconnect-google-client-secret:latest"
+
+        BACKEND_URL="$(gcloud run services describe "${_BACKEND_SERVICE}" --region="${_REGION}" --format='value(status.url)')"
+        echo "$${BACKEND_URL}" > /workspace/backend_url.txt
+        echo "Backend deployed at $${BACKEND_URL}"
+
+  # 3. Build React + Vite frontend image baked with the live Cloud Run Backend HTTPS URL
+  - id: build-frontend
+    name: gcr.io/cloud-builders/docker
+    waitFor: ["deploy-backend"]
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+        BACKEND_URL="$(cat /workspace/backend_url.txt)"
+        docker build \
+          -f Dockerfile \
+          --build-arg "VITE_API_BASE_URL=$${BACKEND_URL}/api" \
+          --build-arg "VITE_API_FALLBACK_TO_MOCK=false" \
+          -t "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/jobconnect-frontend:${_IMAGE_TAG}" \
+          -t "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/jobconnect-frontend:latest" \
+          .
+
+  - id: push-frontend
+    name: gcr.io/cloud-builders/docker
+    waitFor: ["build-frontend"]
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/jobconnect-frontend
+
+  # 4. Deploy React frontend to Cloud Run
+  - id: deploy-frontend
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    waitFor: ["push-frontend"]
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+        gcloud run deploy "${_FRONTEND_SERVICE}" \
+          --image="${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/jobconnect-frontend:${_IMAGE_TAG}" \
+          --region="${_REGION}" \
+          --platform=managed \
+          --allow-unauthenticated \
+          --port=8080 \
+          --memory=512Mi
+
+        FRONTEND_URL="$(gcloud run services describe "${_FRONTEND_SERVICE}" --region="${_REGION}" --format='value(status.url)')"
+        echo "$${FRONTEND_URL}" > /workspace/frontend_url.txt
+        echo "Frontend deployed at $${FRONTEND_URL}"
+
+  # 5. Wire live FRONTEND_URL & BACKEND_URL into backend CORS, OAuth callback, and Google redirect URI
+  - id: wire-urls
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    waitFor: ["deploy-frontend"]
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+        BACKEND_URL="$(cat /workspace/backend_url.txt)"
+        FRONTEND_URL="$(cat /workspace/frontend_url.txt)"
+        CORS_ORIGINS="$${FRONTEND_URL},${_EXTRA_CORS_ORIGINS}"
+        OAUTH_CALLBACK="$${FRONTEND_URL}/oauth/callback"
+        GOOGLE_REDIRECT="$${BACKEND_URL}/login/oauth2/code/google"
+
+        gcloud run services update "${_BACKEND_SERVICE}" \
+          --region="${_REGION}" \
+          --update-env-vars="^@^APP_CORS_ALLOWED_ORIGINS=$${CORS_ORIGINS}@APP_FRONTEND_AUTH_REDIRECT_URI=$${OAUTH_CALLBACK}@GOOGLE_REDIRECT_URI=$${GOOGLE_REDIRECT}"
+
+        echo "========================================================"
+        echo "Frontend URL: $${FRONTEND_URL}"
+        echo "Backend URL:  $${BACKEND_URL}"
+        echo "Google Authorized Redirect URI: $${GOOGLE_REDIRECT}"
+        echo "========================================================"
+
+images:
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/jobconnect-backend:${_IMAGE_TAG}
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/jobconnect-backend:latest
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/jobconnect-frontend:${_IMAGE_TAG}
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/jobconnect-frontend:latest

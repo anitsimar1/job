@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+coverage/
+backend/
+scripts/
+.github/
+.git/
+.env*
+!.env.example
+*.log
+.DS_Store

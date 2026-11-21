@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-surface": "#0b1c30", "inverse-surface": "#213145", "on-secondary-fixed-variant": "#003ea8", "on-error": "#ffffff", "primary-fixed": "#dce1ff", "surface-container-high": "#dce9ff", "surface-bright": "#f8f9ff", "surface-container-highest": "#d3e4fe", "on-tertiary": "#ffffff", "on-primary": "#ffffff", "surface-container-lowest": "#ffffff", "on-secondary-fixed": "#00174b", "primary": "#00236f", "error": "#ba1a1a", "on-error-container": "#93000a", "inverse-on-surface": "#eaf1ff", "tertiary": "#00311f", "secondary": "#0051d5", "secondary-fixed-dim": "#b4c5ff", "secondary-fixed": "#dbe1ff", "outline-variant": "#c5c5d3", "surface-tint": "#4059aa", "background": "#f8f9ff", "tertiary-container": "#004a31", "secondary-container": "#316bf3", "on-primary-container": "#90a8ff", "on-tertiary-fixed-variant": "#005236", "surface-container": "#e5eeff", "on-secondary": "#ffffff", "error-container": "#ffdad6", "surface-variant": "#d3e4fe", "surface-container-low": "#eff4ff", "surface": "#f8f9ff", "on-surface-variant": "#444651", "tertiary-fixed-dim": "#4edea3", "on-tertiary-fixed": "#002113", "primary-container": "#1e3a8a", "tertiary-fixed": "#6ffbbe", "on-tertiary-container": "#27c38a", "primary-fixed-dim": "#b6c4ff", "outline": "#757682", "on-primary-fixed-variant": "#264191", "on-background": "#0b1c30", "on-primary-fixed": "#00164e", "surface-dim": "#cbdbf5", "on-secondary-container": "#fefcff", "inverse-primary": "#b6c4ff" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-sm": "0.5rem", "gutter-sm": "1rem", "margin": "1.5rem", "space-md": "1rem", "space-2xl": "3rem", "space-xs": "0.375rem", "space-lg": "1.5rem", "space-2xs": "0.25rem", "margin-lg": "3rem", "space-xl": "2rem", "margin-sm": "1rem", "gutter": "1.5rem", "gutter-lg": "2rem" }, fontFamily: { "label-sm": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "headline-xl": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "display-lg": ["Plus Jakarta Sans"], "body-lg": ["Inter"], "headline-xl-mobile": ["Plus Jakarta Sans"], "label-lg": ["Inter"], "body-sm": ["Inter"], "label-md": ["Inter"], "body-md": ["Inter"], "display-lg-mobile": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"] }, fontSize: { "label-sm": ["0.6875rem", { lineHeight: "0.875rem", letterSpacing: "0.03em", fontWeight: "600" }], "headline-lg": ["1.5rem", { lineHeight: "2rem", letterSpacing: "-0.015em", fontWeight: "600" }], "headline-xl": ["2.25rem", { lineHeight: "2.75rem", letterSpacing: "-0.02em", fontWeight: "700" }], "headline-sm": ["1.125rem", { lineHeight: "1.5rem", letterSpacing: "-0.005em", fontWeight: "600" }], "display-lg": ["3rem", { lineHeight: "3.5rem", letterSpacing: "-0.025em", fontWeight: "700" }], "body-lg": ["1.125rem", { lineHeight: "1.75rem", fontWeight: "400" }], "headline-xl-mobile": ["1.75rem", { lineHeight: "2.25rem", letterSpacing: "-0.015em", fontWeight: "600" }], "label-lg": ["0.875rem", { lineHeight: "1.25rem", letterSpacing: "0.01em", fontWeight: "600" }], "body-sm": ["0.875rem", { lineHeight: "1.25rem", fontWeight: "400" }], "label-md": ["0.75rem", { lineHeight: "1rem", letterSpacing: "0.02em", fontWeight: "600" }], "body-md": ["1rem", { lineHeight: "1.5rem", fontWeight: "400" }], "display-lg-mobile": ["2rem", { lineHeight: "2.5rem", letterSpacing: "-0.02em", fontWeight: "700" }], "headline-md": ["1.25rem", { lineHeight: "1.75rem", letterSpacing: "-0.01em", fontWeight: "600" }] } } } };</script><style>@layer base{html,body{width:100%;margin:0;padding:0;min-height:100vh;}body{overscroll-behavior-y:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}#drawer-overlay{transition:opacity 0.25s ease-in-out;}#nav-drawer{transition:transform 0.3s cubic-bezier(0.16,1,0.3,1);}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface font-body-md flex flex-col min-h-screen relative antialiased"><header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-gutter-sm flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm"><button aria-label="Open drawer" class="w-11 h-11 flex items-center justify-center rounded-lg text-on-surface hover:bg-surface-container active:scale-95 transition-all" id="drawer-open-btn" type="button"><span class="material-symbols-outlined text-[24px]">menu</span></button><div class="flex items-center gap-space-xs"><img alt="JobConnect Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrDoqPelzQYMC2rHkSVJUkLaEFJe-Jv-9tGCAvyXYG0Tbf05Tm_Nji9JPKpARH8AiupBU8xh_MxCHU2RUISJKnyAX50GFWXYL5D0Cu2d6AmYmXlCJsOuvmOdb3ec_DKp_6YvApbcpuPj7L8fEBb5fN1lgZelav7NECXKzN00KG-amiofeNu7kvaDSMy_dUWEOtv0UOSDPnUH7PAk8rQouZEb__6JXFF2drRl0O_qRQy4"/><span class="font-headline-sm text-headline-sm font-bold text-primary tracking-tight">JobConnect</span></div></div><div class="flex items-center gap-space-xs"><span class="font-label-md text-label-md text-on-surface-variant hidden sm:inline-block max-w-[120px] truncate">Find Jobs</span><button aria-label="Notifications" class="relative w-11 h-11 flex items-center justify-center rounded-lg text-on-surface hover:bg-surface-container active:scale-95 transition-all" type="button"><span class="material-symbols-outlined text-[24px]">notifications</span><span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-error ring-2 ring-surface"></span></button><a class="w-11 h-11 flex items-center justify-center rounded-full hover:ring-2 hover:ring-secondary/30 transition-all" data-path="profile" href="#"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzIFUVWxVlsrpqlEAZtHrDApplGRUt34NK-HGmOwslCK2Y6y4z_ZxK6J7TCic4HL4aUyAuDuJDRVBjZg5QFxFl8WggeXtr-Y1jht3pv7wRZuvPTG-jHDXey-4e5tqrO5SL8CPJbx2bDKQbTIoBW5wZH7PSelogL5nkrqD_70WsQnujmm5nrJSg-zMVNyc414E43go9ToVGQdLxV631KR4miWk_OwJ0VWQSGbX8xsM"/></a></div></div></header><div class="fixed inset-0 z-50 bg-on-surface/40 backdrop-blur-sm pointer-events-none opacity-0 transition-opacity duration-300" id="drawer-backdrop"><div class="fixed top-0 left-0 bottom-0 w-72 max-w-[85vw] bg-surface-container-lowest shadow-[0_20px_25px_-5px_rgba(15,23,42,0.15)] flex flex-col -translate-x-full pt-safe pb-safe z-50" id="nav-drawer"><div class="h-16 px-gutter-sm flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="JobConnect Logo" class="h-7 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrDoqPelzQYMC2rHkSVJUkLaEFJe-Jv-9tGCAvyXYG0Tbf05Tm_Nji9JPKpARH8AiupBU8xh_MxCHU2RUISJKnyAX50GFWXYL5D0Cu2d6AmYmXlCJsOuvmOdb3ec_DKp_6YvApbcpuPj7L8fEBb5fN1lgZelav7NECXKzN00KG-amiofeNu7kvaDSMy_dUWEOtv0UOSDPnUH7PAk8rQouZEb__6JXFF2drRl0O_qRQy4"/><span class="font-headline-sm text-headline-sm font-bold text-primary">JobConnect</span></div><button aria-label="Close drawer" class="w-11 h-11 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container active:scale-95 transition-all" id="drawer-close-btn" type="button"><span class="material-symbols-outlined text-[22px]">close</span></button></div><div class="px-gutter-sm py-space-sm flex items-center gap-space-md bg-surface-container-low mx-gutter-sm rounded-xl"><img alt="Profile" class="w-10 h-10 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzIFUVWxVlsrpqlEAZtHrDApplGRUt34NK-HGmOwslCK2Y6y4z_ZxK6J7TCic4HL4aUyAuDuJDRVBjZg5QFxFl8WggeXtr-Y1jht3pv7wRZuvPTG-jHDXey-4e5tqrO5SL8CPJbx2bDKQbTIoBW5wZH7PSelogL5nkrqD_70WsQnujmm5nrJSg-zMVNyc414E43go9ToVGQdLxV631KR4miWk_OwJ0VWQSGbX8xsM"/><div class="flex flex-col min-w-0 flex-1"><span class="font-label-lg text-label-lg text-on-surface truncate">Devin Vance</span><span class="font-label-sm text-label-sm text-on-surface-variant truncate">Executive Candidate</span></div></div><nav class="flex-1 overflow-y-auto px-gutter-sm py-space-md flex flex-col gap-space-2xs" data-active-classes="bg-primary-container text-on-primary font-semibold"><a class="flex items-center gap-space-md px-gutter-sm h-12 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-label-lg text-label-lg" data-path="home" href="#"><span class="material-symbols-outlined text-[22px]">home</span><span>Home</span></a><a aria-current="page" class="flex items-center gap-space-md px-gutter-sm h-12 rounded-lg transition-all bg-primary-container text-on-primary font-semibold" data-path="find-jobs" href="#"><span class="material-symbols-outlined text-[22px]">search</span><span>Find Jobs</span></a><a class="flex items-center gap-space-md px-gutter-sm h-12 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-label-lg text-label-lg" data-path="my-applications" href="#"><span class="material-symbols-outlined text-[22px]">assignment</span><span>My Applications</span></a><a class="flex items-center gap-space-md px-gutter-sm h-12 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-label-lg text-label-lg" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[22px]">grid_view</span><span>Dashboard</span></a><a class="flex items-center gap-space-md px-gutter-sm h-12 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-label-lg text-label-lg" data-path="profile-resume" href="#"><span class="material-symbols-outlined text-[22px]">person</span><span>Profile &amp; Resume</span></a><div class="h-px bg-outline-variant/30 my-space-xs"></div><a class="flex items-center gap-space-md px-gutter-sm h-12 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-label-lg text-label-lg" data-path="admin-portal" href="#"><span class="material-symbols-outlined text-[22px]">admin_panel_settings</span><span>Admin Portal</span></a></nav><div class="p-gutter-sm mt-auto"><div class="bg-surface-container px-space-md py-space-sm rounded-lg flex items-center justify-between"><span class="font-label-sm text-label-sm text-on-surface-variant">v2.4 Executive</span><span class="font-label-sm text-label-sm text-tertiary-fixed-dim bg-tertiary px-space-xs py-0.5 rounded-full">PRO</span></div></div></div></div><main class="flex-1 flex flex-col relative w-full pt-16 pb-20 bg-surface"><div class="flex flex-col w-full pb-12">
+<!-- Search Command Header Area -->
+<section class="px-gutter-sm pt-space-md pb-space-sm bg-surface">
+<div class="relative flex items-center bg-surface-container-lowest rounded-xl shadow-sm px-space-md py-space-xs transition-all focus-within:shadow-md">
+<span class="material-symbols-outlined text-primary text-[22px] shrink-0 mr-space-xs">search</span>
+<input class="w-full bg-transparent font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none py-1.5" id="job-search-input" placeholder="Role, tech stack, or company..." type="text" value="Frontend Engineer"/>
+<button aria-label="Clear search" class="w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-low active:scale-90 transition-transform shrink-0" id="clear-search-btn" type="button">
+<span class="material-symbols-outlined text-[18px]">cancel</span>
+</button>
+<button aria-label="Advanced filters" class="ml-space-2xs pl-space-xs py-1 flex items-center text-primary font-label-md text-label-md shrink-0 hover:opacity-80" onclick="toggleFilterModal(true)" type="button">
+<span class="material-symbols-outlined text-[20px] text-secondary">tune</span>
+</button>
+</div>
+</section>
+<!-- Filter Carousel Pills with Active Counters -->
+<section class="py-space-xs">
+<div class="flex items-center gap-space-xs overflow-x-auto px-gutter-sm no-scrollbar scroll-smooth">
+<!-- Master Filters trigger pill -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-on-primary font-label-md text-label-md shrink-0 shadow-sm active:scale-95 transition-transform" onclick="toggleFilterModal(true)" type="button">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+<span>Filters (3)</span>
+</button>
+<!-- Active Pill 1: Remote Only -->
+<div class="flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full bg-surface-container-high text-primary font-label-md text-label-md shrink-0">
+<span>Remote Only</span>
+<button class="w-4 h-4 rounded-full flex items-center justify-center text-primary/70 hover:text-primary hover:bg-surface-container-highest transition-colors" onclick="this.parentElement.remove()" type="button">
+<span class="material-symbols-outlined text-[14px]">close</span>
+</button>
+</div>
+<!-- Active Pill 2: Full-time -->
+<div class="flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full bg-surface-container-high text-primary font-label-md text-label-md shrink-0">
+<span>Full-time</span>
+<button class="w-4 h-4 rounded-full flex items-center justify-center text-primary/70 hover:text-primary hover:bg-surface-container-highest transition-colors" onclick="this.parentElement.remove()" type="button">
+<span class="material-symbols-outlined text-[14px]">close</span>
+</button>
+</div>
+<!-- Active Pill 3: $120k+ -->
+<div class="flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full bg-tertiary-container text-tertiary-fixed font-label-md text-label-md shrink-0">
+<span class="material-symbols-outlined text-[14px] text-tertiary-fixed-dim">payments</span>
+<span>$120k+</span>
+<button class="w-4 h-4 rounded-full flex items-center justify-center text-tertiary-fixed/80 hover:text-tertiary-fixed hover:bg-tertiary transition-colors" onclick="this.parentElement.remove()" type="button">
+<span class="material-symbols-outlined text-[14px]">close</span>
+</button>
+</div>
+<!-- Inactive Option: React -->
+<button class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md shrink-0 hover:bg-surface-container-low transition-colors shadow-sm" onclick="toggleFilterModal(true)" type="button">
+<span>Tech: React</span>
+<span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+<!-- Inactive Option: Experience Level -->
+<button class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md shrink-0 hover:bg-surface-container-low transition-colors shadow-sm" onclick="toggleFilterModal(true)" type="button">
+<span>Experience</span>
+<span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+</div>
+</section>
+<!-- Results Count & Sorting Controls -->
+<section class="px-gutter-sm pt-space-md pb-space-xs flex items-center justify-between">
+<div class="flex items-baseline gap-1.5">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface" id="match-counter">148</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">matched roles</span>
+</div>
+<!-- Quick Sort Dropdown Trigger -->
+<div class="relative">
+<button class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md hover:bg-surface-container transition-colors" id="sort-trigger" onclick="toggleSortMenu()" type="button">
+<span class="text-on-surface-variant text-[12px] font-normal">Sort:</span>
+<span class="font-semibold text-primary" id="current-sort-label">Most Relevant</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">arrow_drop_down</span>
+</button>
+<!-- Sort Menu Flyout -->
+<div class="hidden absolute right-0 mt-1 w-44 bg-surface-container-lowest rounded-xl shadow-xl p-1 z-30 flex flex-col gap-0.5" id="sort-menu">
+<button class="w-full text-left px-3 py-2 rounded-lg font-label-md text-label-md bg-surface-container-low text-primary flex items-center justify-between" onclick="selectSort('Most Relevant')" type="button">
+<span>Most Relevant</span>
+<span class="material-symbols-outlined text-[16px]">check</span>
+</button>
+<button class="w-full text-left px-3 py-2 rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container-low flex items-center justify-between" onclick="selectSort('Latest Added')" type="button">
+<span>Latest Added</span>
+</button>
+<button class="w-full text-left px-3 py-2 rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container-low flex items-center justify-between" onclick="selectSort('Highest Salary')" type="button">
+<span>Highest Salary</span>
+</button>
+<button class="w-full text-left px-3 py-2 rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container-low flex items-center justify-between" onclick="selectSort('Fewest Applicants')" type="button">
+<span>Fewest Applicants</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Job Cards Stream -->
+<main class="px-gutter-sm flex flex-col gap-space-sm pt-space-xs">
+<!-- Job Card 1 -->
+<article class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm relative flex flex-col gap-3 transition-all hover:shadow-md">
+<!-- Card Top: Company Meta & Bookmark -->
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap- space-sm min-w-0">
+<img class="w-10 h-10 rounded-lg object-cover bg-surface-container-high shrink-0 mr-3" data-alt="Minimalist modern high-tech enterprise logo glyph in deep navy blue on clean crisp soft white rounded square icon background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACN-IiYdn836RntMcqMJXonZG8g8H99oKtAhSmYwik6d1tf7TXH_MJ7njtM_yRsb8t7Nctq8uHcM9E39FSjvulN1lubpLmv69OOKg19WpBrOzchBBva_RhkkaiJoymy7ipHXZrbPRccNJz992fwtvnMK5T7IRiDDK3zD3Q50YKTkMQz9vbQSlW3ENMyEgnA65peniTnKXg_IsGWcIj7RrYv9wAdlsnZMoIjJNJ2mM"/>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1">
+<span class="font-label-lg text-label-lg font-semibold text-on-surface truncate">Apex Cloud Systems</span>
+<span class="material-symbols-outlined text-[16px] text-tertiary-container shrink-0" style="font-variation-settings: 'FILL' 1;" title="Verified Employer">verified</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">public</span>
+              Remote - US &amp; EU Friendly
+            </span>
+</div>
+</div>
+<button aria-label="Bookmark job" class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low active:scale-90 transition-transform shrink-0" onclick="toggleBookmark(this)" type="button">
+<span class="material-symbols-outlined text-[22px]">bookmark_border</span>
+</button>
+</div>
+<!-- Job Title -->
+<div>
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface leading-snug">Senior Frontend Engineer - React/Next.js</h2>
+</div>
+<!-- Salary & Tier Pills -->
+<div class="flex flex-wrap items-center gap-1.5">
+<span class="px-2.5 py-1 rounded-full bg-tertiary-container text-tertiary-fixed font-label-md text-label-md font-bold tracking-tight">
+          $160,000 - $190,000 / yr
+        </span>
+<span class="px-2.5 py-1 rounded-full bg-surface-container-low text-primary font-label-md text-label-md">
+          Full-time
+        </span>
+<span class="px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant font-label-md text-label-md">
+          Senior Level
+        </span>
+</div>
+<!-- Tech Stack Badges -->
+<div class="flex flex-wrap gap-1">
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm">React 19</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm">Next.js</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm">TypeScript</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm">Tailwind CSS</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm">GraphQL</span>
+</div>
+<!-- Card Footer: Urgency & Quick Action -->
+<div class="pt-2 mt-1 flex items-center justify-between gap-space-sm bg-surface-container-lowest">
+<div class="flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary animate-pulse shrink-0"></span>
+<span>24 applicants • 3 days left</span>
+</div>
+<button class="px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold hover:bg-secondary active:scale-95 transition-all shadow-sm flex items-center gap-1" onclick="triggerApply(this, 'Senior Frontend Engineer')" type="button">
+<span>Quick Apply</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- Job Card 2 -->
+<article class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm relative flex flex-col gap-3 transition-all hover:shadow-md">
+<!-- Card Top: Company Meta & Bookmark -->
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<img class="w-10 h-10 rounded-lg object-cover bg-surface-container-high shrink-0 mr-3" data-alt="Futuristic geometric abstract monogram typography logo in vibrant royal blue and emerald on white square backdrop" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_VKkhUQA2rXwTyTddW1l9V9um1MyCljTpHeK4SYXUNoI2eniVVJbErQ5IBJszHaTMYn1zOTu7xN9CgQko3shkmOKSXI13IPz_TPQKBHon-oJ82Q9bYGSBg9aNtGAu2AyhdkybqgD4leR2YIU0NBVc9wPn4XcPKqGJOzcx2lB1MhF2nG2l8r2SS2c_FHXIS8KKPpaiQ2m0d0IbeaNyimY8hYVauKuvE05EufdlRmE"/>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1">
+<span class="font-label-lg text-label-lg font-semibold text-on-surface truncate">Vanguard AI Dynamics</span>
+<span class="material-symbols-outlined text-[16px] text-tertiary-container shrink-0" style="font-variation-settings: 'FILL' 1;" title="Verified Employer">verified</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+              San Francisco, CA (Hybrid)
+            </span>
+</div>
+</div>
+<button aria-label="Bookmark job" class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low active:scale-90 transition-transform shrink-0" onclick="toggleBookmark(this)" type="button">
+<span class="material-symbols-outlined text-[22px]">bookmark_border</span>
+</button>
+</div>
+<!-- Job Title -->
+<div>
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface leading-snug">Staff Platform Engineer - Edge Compute</h2>
+</div>
+<!-- Salary & Tier Pills -->
+<div class="flex flex-wrap items-center gap-1.5">
+<span class="px-2.5 py-1 rounded-full bg-tertiary-container text-tertiary-fixed font-label-md text-label-md font-bold tracking-tight">
+          $210,000 - $245,000 / yr
+        </span>
+<span class="px-2.5 py-1 rounded-full bg-surface-container-low text-primary font-label-md text-label-md">
+          Full-time
+        </span>
+<span class="px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant font-label-md text-label-md">
+          Staff / Lead
+        </span>
+</div>
+<!-- Tech Stack Badges -->
+<div class="flex flex-wrap gap-1">
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm">Kubernetes</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm">Go / Rust</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm">Terraform</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm">AWS</span>
+</div>
+<!-- Card Footer: Urgency & Quick Action -->
+<div class="pt-2 mt-1 flex items-center justify-between gap-space-sm bg-surface-container-lowest">
+<div class="flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
+<span class="w-2 h-2 rounded-full bg-secondary shrink-0"></span>
+<span>8 applicants • Urgent hiring</span>
+</div>
+<button class="px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold hover:bg-secondary active:scale-95 transition-all shadow-sm flex items-center gap-1" onclick="triggerApply(this, 'Staff Platform Engineer')" type="button">
+<span>Quick Apply</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- Job Card 3 -->
+<article class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm relative flex flex-col gap-3 transition-all hover:shadow-md">
+<!-- Card Top: Company Meta & Bookmark -->
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<img class="w-10 h-10 rounded-lg object-cover bg-surface-container-high shrink-0 mr-3" data-alt="Creative minimal design studio insignia icon with deep cobalt and warm metallic gradient on smooth white rounded tile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCT7xOpKv9UUC8Dop93w1LaW4j0KOIKR4s8zyzGE4lgAM8mVohR-37FPQI0Px1LjaVU6Fg5xCLjY2id0jEJ9FOn9UjoDYfkzx6BIZIScj-uIW-lrUOhRK8Z13xyzeow4Pe3NLgJVfjFQZ5Z5bEdkuOWawHSZ4hINbEvpM2Ub9gxhIoy-2PDEcdoFzV3ainyKG_zslFfqQ3dDXD5S9zuivtvLwEGGStPmLKOPNnJnHA"/>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1">
+<span class="font-label-lg text-label-lg font-semibold text-on-surface truncate">OmniDesign Studio</span>
+<span class="material-symbols-outlined text-[16px] text-tertiary-container shrink-0" style="font-variation-settings: 'FILL' 1;" title="Verified Employer">verified</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">public</span>
+              Remote - Worldwide
+            </span>
+</div>
+</div>
+<button aria-label="Bookmark job" class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low active:scale-90 transition-transform shrink-0" onclick="toggleBookmark(this)" type="button">
+<span class="material-symbols-outlined text-[22px]">bookmark_border</span>
+</button>
+</div>
+<!-- Job Title -->
+<div>
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface leading-snug">Principal Product Designer (Design Systems)</h2>
+</div>
+<!-- Salary & Tier Pills -->
+<div class="flex flex-wrap items-center gap-1.5">
+<span class="px-2.5 py-1 rounded-full bg-tertiary-container text-tertiary-fixed font-label-md text-label-md font-bold tracking-tight">
+          $175,000 - $205,000 / yr
+        </span>
+<span class="px-2.5 py-1 rounded-full bg-surface-container-low text-primary font-label-md text-label-md">
+          Full-time
+        </span>
+<span class="px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant font-label-md text-label-md">
+          Principal
+        </span>
+</div>
+<!-- Tech Stack Badges -->
+<div class="flex flex-wrap gap-1">
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm">Figma Tokens</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm">Design Systems</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm">React Components</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm">WCAG 2.2</span>
+</div>
+<!-- Card Footer: Urgency & Quick Action -->
+<div class="pt-2 mt-1 flex items-center justify-between gap-space-sm bg-surface-container-lowest">
+<div class="flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary shrink-0"></span>
+<span>41 applicants • Closing Friday</span>
+</div>
+<button class="px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold hover:bg-secondary active:scale-95 transition-all shadow-sm flex items-center gap-1" onclick="triggerApply(this, 'Principal Product Designer')" type="button">
+<span>Quick Apply</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- Job Card 4 -->
+<article class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm relative flex flex-col gap-3 transition-all hover:shadow-md">
+<!-- Card Top: Company Meta & Bookmark -->
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<img class="w-10 h-10 rounded-lg object-cover bg-surface-container-high shrink-0 mr-3" data-alt="Modern corporate financial technology mobile app emblem with bold geometric lines in royal blue and slate on crisp pure white square" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBd7rw_Ans-kEmGWyTNQ94Xqk3V8rrN_x7yuTC68jho7v3Vzl0sP-C_oqxxaENVb451gL-9LZljd98CZASC5Ay-LMQ9581iZJWN8Bapo2hUs-1z-4GjAPADcFbh9xJIri7PqFcx9ZaDwqqxwdH2OMIXnfksVigb3ThzD45m9HwHQHw5QL194JLe1bsm6kepfo3I3Ruisb7YoiCJDiqaxX-ArZGPX0ZRKTOOZwEW7vc"/>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1">
+<span class="font-label-lg text-label-lg font-semibold text-on-surface truncate">FinPulse Global</span>
+<span class="material-symbols-outlined text-[16px] text-tertiary-container shrink-0" style="font-variation-settings: 'FILL' 1;" title="Verified Employer">verified</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+              New York, NY (Hybrid 2d)
+            </span>
+</div>
+</div>
+<button aria-label="Bookmark job" class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low active:scale-90 transition-transform shrink-0" onclick="toggleBookmark(this)" type="button">
+<span class="material-symbols-outlined text-[22px]">bookmark_border</span>
+</button>
+</div>
+<!-- Job Title -->
+<div>
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface leading-snug">Mobile React Native Lead</h2>
+</div>
+<!-- Salary & Tier Pills -->
+<div class="flex flex-wrap items-center gap-1.5">
+<span class="px-2.5 py-1 rounded-full bg-tertiary-container text-tertiary-fixed font-label-md text-label-md font-bold tracking-tight">
+          $180,000 - $215,000 / yr
+        </span>
+<span class="px-2.5 py-1 rounded-full bg-surface-container-low text-primary font-label-md text-label-md">
+          Full-time
+        </span>
+<span class="px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant font-label-md text-label-md">
+          Engineering Lead
+        </span>
+</div>
+<!-- Tech Stack Badges -->
+<div class="flex flex-wrap gap-1">
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm">React Native</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm">iOS / Swift</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm">Kotlin</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm">CI/CD Pipeline</span>
+</div>
+<!-- Card Footer: Urgency & Quick Action -->
+<div class="pt-2 mt-1 flex items-center justify-between gap-space-sm bg-surface-container-lowest">
+<div class="flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
+<span class="w-2 h-2 rounded-full bg-surface-tint shrink-0"></span>
+<span>19 applicants • 1 week left</span>
+</div>
+<button class="px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold hover:bg-secondary active:scale-95 transition-all shadow-sm flex items-center gap-1" onclick="triggerApply(this, 'Mobile React Native Lead')" type="button">
+<span>Quick Apply</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</article>
+</main>
+<!-- Interactive Floating Filter Trigger Action Button -->
+<div class="fixed bottom-20 right-4 z-40">
+<button class="flex items-center gap-2 pl-4 pr-5 py-3 rounded-full bg-primary text-on-primary shadow-xl hover:bg-secondary active:scale-95 transition-all" onclick="toggleFilterModal(true)" type="button">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+<span class="font-label-lg text-label-lg font-bold">Filters</span>
+<span class="w-5 h-5 rounded-full bg-secondary-container text-on-secondary font-label-sm text-label-sm flex items-center justify-center font-bold">3</span>
+</button>
+</div>
+<!-- Interactive Slide-Up Filter Modal Preview Sheet -->
+<div class="fixed inset-0 z-50 bg-inverse-surface/50 backdrop-blur-xs hidden opacity-0 transition-opacity duration-200 flex flex-col justify-end" id="filter-modal-overlay">
+<!-- Modal Card Container -->
+<div class="w-full max-h-[751px] bg-surface-container-lowest rounded-t-3xl p-gutter-sm flex flex-col shadow-2xl translate-y-full transition-transform duration-300 ease-out" id="filter-sheet">
+<!-- Modal Header -->
+<div class="flex items-center justify-between pb-space-sm">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">Filter Opportunities</span>
+<span class="px-2 py-0.5 rounded-full bg-primary-fixed text-primary font-label-sm text-label-sm font-bold">3 Active</span>
+</div>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container active:scale-90" onclick="toggleFilterModal(false)" type="button">
+<span class="material-symbols-outlined text-[22px]">close</span>
+</button>
+</div>
+<!-- Scrollable Filter Criteria Options -->
+<div class="overflow-y-auto py-space-sm flex flex-col gap-space-md max-h-[530px]">
+<!-- Workplace Preference -->
+<div class="flex flex-col gap-2">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">Workplace Model</span>
+<div class="grid grid-cols-3 gap-2">
+<button class="py-2.5 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md font-semibold text-center" type="button">Remote</button>
+<button class="py-2.5 rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md text-center hover:bg-surface-container" type="button">Hybrid</button>
+<button class="py-2.5 rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md text-center hover:bg-surface-container" type="button">On-site</button>
+</div>
+</div>
+<!-- Employment Type -->
+<div class="flex flex-col gap-2">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">Employment Type</span>
+<div class="flex flex-wrap gap-2">
+<button class="px-3.5 py-2 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md font-semibold" type="button">Full-Time</button>
+<button class="px-3.5 py-2 rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md" type="button">Contract / C2C</button>
+<button class="px-3.5 py-2 rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md" type="button">Executive Advisory</button>
+</div>
+</div>
+<!-- Minimum Annual Compensation Slider Preview -->
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">Min. Base Salary</span>
+<span class="font-label-lg text-label-lg font-bold text-tertiary-container" id="salary-display">$120,000 / yr</span>
+</div>
+<input class="w-full h-2 bg-surface-container rounded-lg appearance-none cursor-pointer accent-secondary" max="260" min="80" oninput="updateSalaryPreview(this.value)" step="10" type="range" value="120"/>
+<div class="flex justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span>$80k</span>
+<span>$170k</span>
+<span>$260k+</span>
+</div>
+</div>
+<!-- Core Technologies -->
+<div class="flex flex-col gap-2">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">Tech Stack Tags</span>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1.5 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md flex items-center gap-1.5">
+              React
+              <span class="material-symbols-outlined text-[14px]">close</span>
+</span>
+<span class="px-3 py-1.5 rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md">TypeScript</span>
+<span class="px-3 py-1.5 rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md">Next.js</span>
+<span class="px-3 py-1.5 rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md">Node.js</span>
+<span class="px-3 py-1.5 rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md">GraphQL</span>
+</div>
+</div>
+</div>
+<!-- Modal Action Buttons -->
+<div class="pt-space-md flex items-center gap-space-sm mt-auto">
+<button class="flex-1 py-3 rounded-xl bg-surface-container-low text-on-surface font-label-lg text-label-lg font-semibold hover:bg-surface-container active:scale-95 transition-all text-center" onclick="resetFilters()" type="button">
+          Reset All
+        </button>
+<button class="flex-[2] py-3 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg font-bold shadow-md hover:bg-secondary active:scale-95 transition-all text-center" onclick="applyFilters()" type="button">
+          View 148 Results
+        </button>
+</div>
+</div>
+</div>
+<!-- Toast Notification Feedback Component -->
+<div class="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-inverse-surface text-inverse-on-surface px-4 py-2.5 rounded-full font-label-md text-label-md shadow-xl flex items-center gap-2 pointer-events-none opacity-0 transition-opacity duration-300" id="feedback-toast">
+<span class="material-symbols-outlined text-[18px] text-tertiary-fixed-dim" id="toast-icon">check_circle</span>
+<span id="toast-text">Filters updated</span>
+</div>
+</div>
+<script>
+  // Filter Modal Drawer Interactivity
+  function toggleFilterModal(open) {
+    const overlay = document.getElementById('filter-modal-overlay');
+    const sheet = document.getElementById('filter-sheet');
+    if (open) {
+      overlay.classList.remove('hidden');
+      setTimeout(() => {
+        overlay.classList.remove('opacity-0');
+        sheet.classList.remove('translate-y-full');
+      }, 10);
+    } else {
+      sheet.classList.add('translate-y-full');
+      overlay.classList.add('opacity-0');
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+      }, 300);
+    }
+  }
+
+  // Update Salary Display dynamically
+  function updateSalaryPreview(val) {
+    document.getElementById('salary-display').textContent = '$' + val + ',000 / yr';
+  }
+
+  // Reset Filters logic
+  function resetFilters() {
+    toggleFilterModal(false);
+    showToast('Filters cleared', 'refresh');
+  }
+
+  // Apply filters logic
+  function applyFilters() {
+    toggleFilterModal(false);
+    showToast('148 matching positions loaded', 'tune');
+  }
+
+  // Search input clear trigger
+  document.getElementById('clear-search-btn').addEventListener('click', function() {
+    const input = document.getElementById('job-search-input');
+    input.value = '';
+    input.focus();
+    showToast('Search query cleared', 'close');
+  });
+
+  // Sort dropdown menu handling
+  function toggleSortMenu() {
+    const menu = document.getElementById('sort-menu');
+    menu.classList.toggle('hidden');
+  }
+
+  function selectSort(label) {
+    document.getElementById('current-sort-label').textContent = label;
+    document.getElementById('sort-menu').classList.add('hidden');
+    showToast('Sorted by ' + label, 'swap_vert');
+  }
+
+  // Bookmark toggling with delight animation
+  function toggleBookmark(btn) {
+    const icon = btn.querySelector('.material-symbols-outlined');
+    const isSaved = icon.textContent === 'bookmark';
+    if (isSaved) {
+      icon.textContent = 'bookmark_border';
+      icon.style.fontVariationSettings = "'FILL' 0";
+      btn.classList.remove('text-secondary');
+      showToast('Removed from saved roles', 'bookmark_border');
+    } else {
+      icon.textContent = 'bookmark';
+      icon.style.fontVariationSettings = "'FILL' 1";
+      btn.classList.add('text-secondary');
+      showToast('Role saved to your shortlist!', 'bookmark');
+    }
+  }
+
+  // Quick Apply interaction
+  function triggerApply(btn, role) {
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span><span>Applying...</span>';
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">check</span><span>Applied</span>';
+      btn.classList.remove('bg-primary');
+      btn.classList.add('bg-tertiary-container', 'text-tertiary-fixed');
+      showToast('Application submitted for ' + role, 'verified');
+    }, 900);
+  }
+
+  // Toast feedback micro-interaction
+  function showToast(text, iconName) {
+    const toast = document.getElementById('feedback-toast');
+    const icon = document.getElementById('toast-icon');
+    const label = document.getElementById('toast-text');
+    icon.textContent = iconName || 'check_circle';
+    label.textContent = text;
+    toast.classList.remove('opacity-0');
+    setTimeout(() => {
+      toast.classList.add('opacity-0');
+    }, 2400);
+  }
+
+  // Close modals when clicking outside
+  document.getElementById('filter-modal-overlay').addEventListener('click', function(e) {
+    if (e.target === this) {
+      toggleFilterModal(false);
+    }
+  });
+
+  // Close sort menu on document click
+  document.addEventListener('click', function(e) {
+    const trigger = document.getElementById('sort-trigger');
+    const menu = document.getElementById('sort-menu');
+    if (!trigger.contains(e.target) && !menu.contains(e.target)) {
+      menu.classList.add('hidden');
+    }
+  });
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_-1px_8px_rgba(0,0,0,0.04)]" data-active-classes="text-secondary font-bold"><div class="flex justify-around items-center h-16 px-gutter-sm max-w-md mx-auto"><a class="flex flex-col items-center justify-center min-w-[56px] h-12 rounded-lg text-on-surface-variant hover:text-on-surface active:scale-95 transition-all" data-path="home" href="#"><span class="material-symbols-outlined text-[24px]">home</span><span class="font-label-sm text-label-sm mt-0.5">Home</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[56px] h-12 rounded-lg active:scale-95 transition-all text-secondary font-bold" data-path="find-jobs" href="#"><span class="material-symbols-outlined text-[24px]">travel_explore</span><span class="font-label-sm text-label-sm mt-0.5">Search</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-12 rounded-lg text-on-surface-variant hover:text-on-surface active:scale-95 transition-all" data-path="my-applications" href="#"><span class="material-symbols-outlined text-[24px]">work_outline</span><span class="font-label-sm text-label-sm mt-0.5">Applications</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-12 rounded-lg text-on-surface-variant hover:text-on-surface active:scale-95 transition-all" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[24px]">dashboard</span><span class="font-label-sm text-label-sm mt-0.5">Dashboard</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-12 rounded-lg text-on-surface-variant hover:text-on-surface active:scale-95 transition-all" data-path="profile-resume" href="#"><span class="material-symbols-outlined text-[24px]">account_circle</span><span class="font-label-sm text-label-sm mt-0.5">Profile</span></a></div></nav><script>(function(){const b=document.getElementById("drawer-backdrop"),d=document.getElementById("nav-drawer"),o=document.getElementById("drawer-open-btn"),c=document.getElementById("drawer-close-btn");function open(){b.classList.remove("pointer-events-none","opacity-0");b.classList.add("opacity-100");d.classList.remove("-translate-x-full");d.classList.add("translate-x-0");}function close(){b.classList.add("opacity-0");b.classList.remove("opacity-100");d.classList.add("-translate-x-full");d.classList.remove("translate-x-0");setTimeout(()=>{b.classList.add("pointer-events-none");},300);}if(o)o.addEventListener("click",open);if(c)c.addEventListener("click",close);if(b)b.addEventListener("click",function(e){if(e.target===b)close();});})();</script></body></html>

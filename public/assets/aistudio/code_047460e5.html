@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-surface": "#0b1c30", "inverse-surface": "#213145", "on-secondary-fixed-variant": "#003ea8", "on-error": "#ffffff", "primary-fixed": "#dce1ff", "surface-container-high": "#dce9ff", "surface-bright": "#f8f9ff", "surface-container-highest": "#d3e4fe", "on-tertiary": "#ffffff", "on-primary": "#ffffff", "surface-container-lowest": "#ffffff", "on-secondary-fixed": "#00174b", "primary": "#00236f", "error": "#ba1a1a", "on-error-container": "#93000a", "inverse-on-surface": "#eaf1ff", "tertiary": "#00311f", "secondary": "#0051d5", "secondary-fixed-dim": "#b4c5ff", "secondary-fixed": "#dbe1ff", "outline-variant": "#c5c5d3", "surface-tint": "#4059aa", "background": "#f8f9ff", "tertiary-container": "#004a31", "secondary-container": "#316bf3", "on-primary-container": "#90a8ff", "on-tertiary-fixed-variant": "#005236", "surface-container": "#e5eeff", "on-secondary": "#ffffff", "error-container": "#ffdad6", "surface-variant": "#d3e4fe", "surface-container-low": "#eff4ff", "surface": "#f8f9ff", "on-surface-variant": "#444651", "tertiary-fixed-dim": "#4edea3", "on-tertiary-fixed": "#002113", "primary-container": "#1e3a8a", "tertiary-fixed": "#6ffbbe", "on-tertiary-container": "#27c38a", "primary-fixed-dim": "#b6c4ff", "outline": "#757682", "on-primary-fixed-variant": "#264191", "on-background": "#0b1c30", "on-primary-fixed": "#00164e", "surface-dim": "#cbdbf5", "on-secondary-container": "#fefcff", "inverse-primary": "#b6c4ff" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-sm": "0.5rem", "gutter-sm": "1rem", "margin": "1.5rem", "space-md": "1rem", "space-2xl": "3rem", "space-xs": "0.375rem", "space-lg": "1.5rem", "space-2xs": "0.25rem", "margin-lg": "3rem", "space-xl": "2rem", "margin-sm": "1rem", "gutter": "1.5rem", "gutter-lg": "2rem" }, fontFamily: { "label-sm": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "headline-xl": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "display-lg": ["Plus Jakarta Sans"], "body-lg": ["Inter"], "headline-xl-mobile": ["Plus Jakarta Sans"], "label-lg": ["Inter"], "body-sm": ["Inter"], "label-md": ["Inter"], "body-md": ["Inter"], "display-lg-mobile": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"] }, fontSize: { "label-sm": ["0.6875rem", { lineHeight: "0.875rem", letterSpacing: "0.03em", fontWeight: "600" }], "headline-lg": ["1.5rem", { lineHeight: "2rem", letterSpacing: "-0.015em", fontWeight: "600" }], "headline-xl": ["2.25rem", { lineHeight: "2.75rem", letterSpacing: "-0.02em", fontWeight: "700" }], "headline-sm": ["1.125rem", { lineHeight: "1.5rem", letterSpacing: "-0.005em", fontWeight: "600" }], "display-lg": ["3rem", { lineHeight: "3.5rem", letterSpacing: "-0.025em", fontWeight: "700" }], "body-lg": ["1.125rem", { lineHeight: "1.75rem", fontWeight: "400" }], "headline-xl-mobile": ["1.75rem", { lineHeight: "2.25rem", letterSpacing: "-0.015em", fontWeight: "600" }], "label-lg": ["0.875rem", { lineHeight: "1.25rem", letterSpacing: "0.01em", fontWeight: "600" }], "body-sm": ["0.875rem", { lineHeight: "1.25rem", fontWeight: "400" }], "label-md": ["0.75rem", { lineHeight: "1rem", letterSpacing: "0.02em", fontWeight: "600" }], "body-md": ["1rem", { lineHeight: "1.5rem", fontWeight: "400" }], "display-lg-mobile": ["2rem", { lineHeight: "2.5rem", letterSpacing: "-0.02em", fontWeight: "700" }], "headline-md": ["1.25rem", { lineHeight: "1.75rem", letterSpacing: "-0.01em", fontWeight: "600" }] } } } };</script><style>@layer base{html,body{width:100%;margin:0;padding:0;min-height:100vh;}body{overscroll-behavior-y:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>body { min-height: max(884px, 100dvh); }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface font-body-md flex flex-col min-h-screen relative antialiased"><header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-gutter-sm flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-xs"><button aria-label="Go back" class="w-11 h-11 flex items-center justify-center rounded-lg text-on-surface hover:bg-surface-container active:scale-95 transition-all" onclick="history.back()" type="button"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><div class="flex items-center gap-space-xs"><img alt="JobConnect Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrDoqPelzQYMC2rHkSVJUkLaEFJe-Jv-9tGCAvyXYG0Tbf05Tm_Nji9JPKpARH8AiupBU8xh_MxCHU2RUISJKnyAX50GFWXYL5D0Cu2d6AmYmXlCJsOuvmOdb3ec_DKp_6YvApbcpuPj7L8fEBb5fN1lgZelav7NECXKzN00KG-amiofeNu7kvaDSMy_dUWEOtv0UOSDPnUH7PAk8rQouZEb__6JXFF2drRl0O_qRQy4"/><span class="font-headline-sm text-headline-sm font-bold text-primary tracking-tight hidden xs:inline">JobConnect</span></div></div><h1 class="font-headline-sm text-headline-sm font-semibold text-on-surface truncate flex-1 text-center px-space-xs">Apply For Job</h1><div class="flex items-center gap-space-xs"><button aria-label="Notifications" class="relative w-11 h-11 flex items-center justify-center rounded-lg text-on-surface hover:bg-surface-container active:scale-95 transition-all" type="button"><span class="material-symbols-outlined text-[24px]">notifications</span><span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-error ring-2 ring-surface"></span></button><a class="w-11 h-11 flex items-center justify-center rounded-full hover:ring-2 hover:ring-secondary/30 transition-all" data-path="profile-resume" href="#"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzIFUVWxVlsrpqlEAZtHrDApplGRUt34NK-HGmOwslCK2Y6y4z_ZxK6J7TCic4HL4aUyAuDuJDRVBjZg5QFxFl8WggeXtr-Y1jht3pv7wRZuvPTG-jHDXey-4e5tqrO5SL8CPJbx2bDKQbTIoBW5wZH7PSelogL5nkrqD_70WsQnujmm5nrJSg-zMVNyc414E43go9ToVGQdLxV631KR4miWk_OwJ0VWQSGbX8xsM"/></a></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-safe bg-surface"><div class="flex flex-col w-full pb-28">
+<!-- Stepper & Subheader Progress -->
+<div class="px-gutter-sm py-space-sm bg-surface-container-low flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<a class="inline-flex items-center gap-space-2xs text-secondary hover:text-primary transition-colors py-1" href="#">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span>
+<span class="font-label-md text-label-md">Back to Job Details</span>
+</a>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Step 1 of 3</span>
+</div>
+<div class="flex items-center justify-between text-on-surface mt-0.5">
+<span class="font-headline-sm text-headline-sm font-semibold">Profile &amp; Experience</span>
+<span class="font-label-sm text-label-sm text-secondary font-bold">33% Complete</span>
+</div>
+<!-- Micro-delight animated-ready Progress Bar -->
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden mt-1">
+<div class="h-full bg-secondary rounded-full transition-all duration-500 ease-out" style="width: 33.33%;"></div>
+</div>
+</div>
+<div class="px-gutter-sm flex flex-col gap-space-md mt-space-md">
+<!-- Context Job Summary Card -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-11 h-11 rounded-lg bg-surface-container flex items-center justify-center shrink-0 text-primary font-headline-sm font-bold shadow-xs">
+<img class="w-11 h-11 rounded-lg object-cover" data-alt="Modern tech corporate emblem of Apex Cloud Systems with minimalist geometric cloud network lines in deep navy blue and cyan lighting on sleek backdrop" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0iQbLQDyDP1TyqfJ9R8YyhnfHlBn8mX-F3IY30Dv-R-JNbEzaVvSWwjM54ADPvOVYnxghJMDGme8kBvIcaSO3niB_1cNu1aNo3736XNtfGXD9RLjsQz5Wq_zOPmNhz94GVS4rQMxaSjf0xhlmOv5ZxiZdEIXyXOqsDQ4vnwu5VwLqlPJE-7msWKubEwAZ_s8UfaWrkA-EOpe37-XqIfHZF6zuHtv3uxvPj_zFB-s"/>
+</div>
+<div class="min-w-0 flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Apex Cloud Systems</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-bold truncate">Senior Frontend Engineer – React / Next.js</h2>
+<div class="flex items-center gap-space-xs mt-1 flex-wrap">
+<span class="bg-surface-container-high text-primary font-label-sm text-label-sm px-2 py-0.5 rounded-full font-semibold">
+              $160k – $190k
+            </span>
+<span class="bg-surface-container-low text-secondary font-label-sm text-label-sm px-2 py-0.5 rounded-full">
+              Remote (US)
+            </span>
+</div>
+</div>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</div>
+</div>
+<!-- Fast Auto-Fill Delight Banner -->
+<div class="bg-surface-container p-space-sm rounded-xl flex items-center justify-between gap-space-sm shadow-xs transition-all">
+<div class="flex items-center gap-space-xs min-w-0">
+<div class="w-7 h-7 rounded-full bg-secondary/15 flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined text-[16px]">auto_fix_high</span>
+</div>
+<div class="truncate">
+<p class="font-label-sm text-label-sm text-on-surface truncate">
+            Auto-filled from <span class="font-semibold text-secondary">Elena Rostova</span>
+</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="inline-block w-1.5 h-1.5 rounded-full bg-tertiary-fixed-dim"></span>
+            Profile 98% Complete
+          </p>
+</div>
+</div>
+<button class="shrink-0 font-label-md text-label-md text-secondary hover:text-primary font-semibold px-2 py-1 rounded hover:bg-surface-container-high transition-colors" type="button">
+        Edit
+      </button>
+</div>
+<!-- Main Form Container -->
+<form class="flex flex-col gap-space-lg" onsubmit="event.preventDefault();">
+<!-- Section 1: Personal Information -->
+<section class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-6 h-6 rounded-full bg-surface-container-high text-primary flex items-center justify-center font-label-sm text-label-sm font-bold">1</span>
+<h3 class="font-headline-sm text-headline-sm font-bold text-on-surface">Personal Information</h3>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Required</span>
+</div>
+<div class="flex flex-col gap-space-sm">
+<!-- Full Name -->
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm font-semibold text-on-surface" for="fullName">Full Legal Name</label>
+<div class="relative">
+<input class="w-full h-11 px-3 pl-10 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-surface-container-lowest transition-all" id="fullName" type="text" value="Elena Rostova"/>
+<span class="material-symbols-outlined absolute left-3 top-3 text-[18px] text-on-surface-variant">person</span>
+</div>
+</div>
+<!-- Email -->
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm font-semibold text-on-surface" for="email">Email Address</label>
+<div class="relative">
+<input class="w-full h-11 px-3 pl-10 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-surface-container-lowest transition-all" id="email" type="email" value="elena.rostova@techmail.io"/>
+<span class="material-symbols-outlined absolute left-3 top-3 text-[18px] text-on-surface-variant">mail</span>
+</div>
+</div>
+<!-- Phone & Location Split -->
+<div class="grid grid-cols-1 gap-space-sm">
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm font-semibold text-on-surface" for="phone">Phone Number</label>
+<div class="relative">
+<input class="w-full h-11 px-3 pl-10 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-surface-container-lowest transition-all" id="phone" type="tel" value="+1 (555) 234-8901"/>
+<span class="material-symbols-outlined absolute left-3 top-3 text-[18px] text-on-surface-variant">call</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm font-semibold text-on-surface" for="location">Current Location</label>
+<div class="relative">
+<input class="w-full h-11 px-3 pl-10 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-surface-container-lowest transition-all" id="location" type="text" value="San Francisco, CA (Remote)"/>
+<span class="material-symbols-outlined absolute left-3 top-3 text-[18px] text-on-surface-variant">location_on</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: Resume & Portfolio Upload -->
+<section class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-6 h-6 rounded-full bg-surface-container-high text-primary flex items-center justify-center font-label-sm text-label-sm font-bold">2</span>
+<h3 class="font-headline-sm text-headline-sm font-bold text-on-surface">Resume &amp; Portfolios</h3>
+</div>
+<span class="font-label-sm text-label-sm text-tertiary-container font-semibold">Active File</span>
+</div>
+<!-- Selected Resume Card Component -->
+<div class="p-space-sm rounded-lg bg-surface-container-low flex items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs min-w-0">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[22px]">description</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-label-md font-semibold text-on-surface truncate">Elena_Rostova_Staff_Frontend_2025.pdf</span>
+<span class="material-symbols-outlined text-[16px] text-tertiary-container" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">1.4 MB • Uploaded Oct 24, 2024</span>
+</div>
+</div>
+<div class="flex items-center gap-1 shrink-0">
+<button aria-label="View Resume" class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface hover:bg-surface-container active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button aria-label="Replace Resume" class="w-8 h-8 rounded-lg flex items-center justify-center text-secondary hover:bg-surface-container active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">swap_horiz</span>
+</button>
+</div>
+</div>
+<!-- Portfolio Links -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm font-semibold text-on-surface" for="githubLink">Portfolio / GitHub Profile</label>
+<div class="relative">
+<input class="w-full h-11 px-3 pl-10 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-surface-container-lowest transition-all" id="githubLink" type="url" value="https://github.com/erostova"/>
+<span class="material-symbols-outlined absolute left-3 top-3 text-[18px] text-on-surface-variant">code</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm font-semibold text-on-surface" for="linkedinLink">LinkedIn URL</label>
+<div class="relative">
+<input class="w-full h-11 px-3 pl-10 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-surface-container-lowest transition-all" id="linkedinLink" type="url" value="https://linkedin.com/in/erostova"/>
+<span class="material-symbols-outlined absolute left-3 top-3 text-[18px] text-on-surface-variant">link</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 3: Work Eligibility & Experience -->
+<section class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="w-6 h-6 rounded-full bg-surface-container-high text-primary flex items-center justify-center font-label-sm text-label-sm font-bold">3</span>
+<h3 class="font-headline-sm text-headline-sm font-bold text-on-surface">Experience &amp; Eligibility</h3>
+</div>
+<!-- Years of Experience Selector -->
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm font-semibold text-on-surface">Relevant React / Frontend Experience</label>
+<div class="grid grid-cols-4 gap-space-xs">
+<button class="h-10 rounded-lg bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm font-semibold hover:bg-surface-container transition-all text-center flex items-center justify-center" type="button">
+              1-3 yrs
+            </button>
+<button class="h-10 rounded-lg bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm font-semibold hover:bg-surface-container transition-all text-center flex items-center justify-center" type="button">
+              3-5 yrs
+            </button>
+<button class="h-10 rounded-lg bg-primary text-on-primary font-label-sm text-label-sm font-semibold shadow-xs flex items-center justify-center" type="button">
+              5-7 yrs
+            </button>
+<button class="h-10 rounded-lg bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm font-semibold hover:bg-surface-container transition-all text-center flex items-center justify-center" type="button">
+              8+ yrs
+            </button>
+</div>
+</div>
+<!-- US Work Authorization -->
+<div class="flex flex-col gap-2 pt-1">
+<label class="font-label-sm text-label-sm font-semibold text-on-surface">Legally authorized to work in the US?</label>
+<div class="flex gap-space-sm">
+<label class="flex-1 flex items-center gap-2 p-space-xs px-space-sm rounded-lg bg-surface-container-low cursor-pointer">
+<input checked="" class="w-4 h-4 text-primary focus:ring-secondary" name="work_auth" type="radio"/>
+<span class="font-label-md text-label-md text-on-surface">Yes, authorized</span>
+</label>
+<label class="flex-1 flex items-center gap-2 p-space-xs px-space-sm rounded-lg bg-surface-container-low cursor-pointer">
+<input class="w-4 h-4 text-primary focus:ring-secondary" name="work_auth" type="radio"/>
+<span class="font-label-md text-label-md text-on-surface">No</span>
+</label>
+</div>
+</div>
+<!-- Visa Sponsorship Requirement -->
+<div class="flex flex-col gap-2 pt-1">
+<label class="font-label-sm text-label-sm font-semibold text-on-surface">Will you now or in the future require visa sponsorship?</label>
+<div class="flex gap-space-sm">
+<label class="flex-1 flex items-center gap-2 p-space-xs px-space-sm rounded-lg bg-surface-container-low cursor-pointer">
+<input class="w-4 h-4 text-primary focus:ring-secondary" name="sponsorship" type="radio"/>
+<span class="font-label-md text-label-md text-on-surface">Yes</span>
+</label>
+<label class="flex-1 flex items-center gap-2 p-space-xs px-space-sm rounded-lg bg-surface-container-low cursor-pointer">
+<input checked="" class="w-4 h-4 text-primary focus:ring-secondary" name="sponsorship" type="radio"/>
+<span class="font-label-md text-label-md text-on-surface">No, not required</span>
+</label>
+</div>
+</div>
+<!-- Expected Notice Period -->
+<div class="flex flex-col gap-2 pt-1">
+<label class="font-label-sm text-label-sm font-semibold text-on-surface">Earliest Availability / Notice Period</label>
+<div class="grid grid-cols-3 gap-space-xs">
+<button class="h-10 rounded-lg bg-surface-container-low text-on-surface font-label-sm text-label-sm font-medium hover:bg-surface-container transition-all flex items-center justify-center" type="button">
+              Immediate
+            </button>
+<button class="h-10 rounded-lg bg-primary text-on-primary font-label-sm text-label-sm font-semibold shadow-xs flex items-center justify-center" type="button">
+              2 Weeks
+            </button>
+<button class="h-10 rounded-lg bg-surface-container-low text-on-surface font-label-sm text-label-sm font-medium hover:bg-surface-container transition-all flex items-center justify-center" type="button">
+              1 Month+
+            </button>
+</div>
+</div>
+</section>
+<!-- Section 4: Short Cover Note / Pitch -->
+<section class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-6 h-6 rounded-full bg-surface-container-high text-primary flex items-center justify-center font-label-sm text-label-sm font-bold">4</span>
+<h3 class="font-headline-sm text-headline-sm font-bold text-on-surface">Short Pitch</h3>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Optional</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          Share quick highlights of why your engineering toolkit and architecture patterns are a tailored match for Apex Cloud Systems.
+        </p>
+<textarea class="w-full p-3 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-surface-container-lowest transition-all placeholder:text-outline resize-none" placeholder="Highlight why you're a great fit for Apex Cloud Systems... (e.g. Led migration to Next.js App Router, optimized core web vitals by 40%)" rows="4"></textarea>
+</section>
+<!-- Section 5: Equal Opportunity & Consent -->
+<section class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-start gap-space-sm">
+<input checked="" class="mt-1 w-5 h-5 rounded text-primary focus:ring-secondary accent-primary cursor-pointer shrink-0" id="consentCheck" type="checkbox"/>
+<label class="font-body-sm text-body-sm text-on-surface leading-snug cursor-pointer" for="consentCheck">
+            I agree to JobConnect Privacy Policy and allow <span class="font-semibold text-primary">Apex Cloud Systems</span> to process my candidate data for hiring and interview scheduling purposes.
+          </label>
+</div>
+</section>
+</form>
+</div>
+<!-- Bottom Floating CTA Dock -->
+<div class="fixed bottom-0 inset-x-0 bg-surface/90 backdrop-blur-md px-gutter-sm py-space-sm shadow-xl z-40 pb-safe">
+<div class="flex items-center gap-space-sm max-w-lg mx-auto">
+<button class="h-12 px-4 rounded-lg bg-surface-container-high text-primary font-label-lg text-label-lg font-semibold hover:bg-surface-container active:scale-95 transition-all flex items-center justify-center gap-1 shrink-0" type="button">
+<span class="material-symbols-outlined text-[18px]">bookmark_border</span>
+<span class="hidden xs:inline">Save Draft</span>
+</button>
+<button class="flex-1 h-12 px-space-md rounded-lg bg-primary text-on-primary font-label-lg text-label-lg font-bold hover:bg-secondary active:scale-[0.98] transition-all flex items-center justify-center gap-space-xs shadow-md" type="button">
+<span>Review &amp; Submit Application</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<script>
+  // Simple micro-interaction for selectable pill tabs
+  document.querySelectorAll('section button[type="button"]').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      const parent = this.parentElement;
+      if (parent && (parent.classList.contains('grid-cols-4') || parent.classList.contains('grid-cols-3'))) {
+        parent.querySelectorAll('button').forEach(sibling => {
+          sibling.className = 'h-10 rounded-lg bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm font-semibold hover:bg-surface-container transition-all flex items-center justify-center';
+        });
+        this.className = 'h-10 rounded-lg bg-primary text-on-primary font-label-sm text-label-sm font-semibold shadow-xs flex items-center justify-center';
+      }
+    });
+  });
+</script></main></body></html>

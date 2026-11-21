@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="admin_mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-surface": "#0b1c30", "inverse-surface": "#213145", "on-secondary-fixed-variant": "#003ea8", "on-error": "#ffffff", "primary-fixed": "#dce1ff", "surface-container-high": "#dce9ff", "surface-bright": "#f8f9ff", "surface-container-highest": "#d3e4fe", "on-tertiary": "#ffffff", "on-primary": "#ffffff", "surface-container-lowest": "#ffffff", "on-secondary-fixed": "#00174b", "primary": "#00236f", "error": "#ba1a1a", "on-error-container": "#93000a", "inverse-on-surface": "#eaf1ff", "tertiary": "#00311f", "secondary": "#0051d5", "secondary-fixed-dim": "#b4c5ff", "secondary-fixed": "#dbe1ff", "outline-variant": "#c5c5d3", "surface-tint": "#4059aa", "background": "#f8f9ff", "tertiary-container": "#004a31", "secondary-container": "#316bf3", "on-primary-container": "#90a8ff", "on-tertiary-fixed-variant": "#005236", "surface-container": "#e5eeff", "on-secondary": "#ffffff", "error-container": "#ffdad6", "surface-variant": "#d3e4fe", "surface-container-low": "#eff4ff", "surface": "#f8f9ff", "on-surface-variant": "#444651", "tertiary-fixed-dim": "#4edea3", "on-tertiary-fixed": "#002113", "primary-container": "#1e3a8a", "tertiary-fixed": "#6ffbbe", "on-tertiary-container": "#27c38a", "primary-fixed-dim": "#b6c4ff", "outline": "#757682", "on-primary-fixed-variant": "#264191", "on-background": "#0b1c30", "on-primary-fixed": "#00164e", "surface-dim": "#cbdbf5", "on-secondary-container": "#fefcff", "inverse-primary": "#b6c4ff" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-sm": "0.5rem", "gutter-sm": "1rem", "margin": "1.5rem", "space-md": "1rem", "space-2xl": "3rem", "space-xs": "0.375rem", "space-lg": "1.5rem", "space-2xs": "0.25rem", "margin-lg": "3rem", "space-xl": "2rem", "margin-sm": "1rem", "gutter": "1.5rem", "gutter-lg": "2rem" }, fontFamily: { "label-sm": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "headline-xl": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "display-lg": ["Plus Jakarta Sans"], "body-lg": ["Inter"], "headline-xl-mobile": ["Plus Jakarta Sans"], "label-lg": ["Inter"], "body-sm": ["Inter"], "label-md": ["Inter"], "body-md": ["Inter"], "display-lg-mobile": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"] }, fontSize: { "label-sm": ["0.6875rem", { lineHeight: "0.875rem", letterSpacing: "0.03em", fontWeight: "600" }], "headline-lg": ["1.5rem", { lineHeight: "2rem", letterSpacing: "-0.015em", fontWeight: "600" }], "headline-xl": ["2.25rem", { lineHeight: "2.75rem", letterSpacing: "-0.02em", fontWeight: "700" }], "headline-sm": ["1.125rem", { lineHeight: "1.5rem", letterSpacing: "-0.005em", fontWeight: "600" }], "display-lg": ["3rem", { lineHeight: "3.5rem", letterSpacing: "-0.025em", fontWeight: "700" }], "body-lg": ["1.125rem", { lineHeight: "1.75rem", fontWeight: "400" }], "headline-xl-mobile": ["1.75rem", { lineHeight: "2.25rem", letterSpacing: "-0.015em", fontWeight: "600" }], "label-lg": ["0.875rem", { lineHeight: "1.25rem", letterSpacing: "0.01em", fontWeight: "600" }], "body-sm": ["0.875rem", { lineHeight: "1.25rem", fontWeight: "400" }], "label-md": ["0.75rem", { lineHeight: "1rem", letterSpacing: "0.02em", fontWeight: "600" }], "body-md": ["1rem", { lineHeight: "1.5rem", fontWeight: "400" }], "display-lg-mobile": ["2rem", { lineHeight: "2.5rem", letterSpacing: "-0.02em", fontWeight: "700" }], "headline-md": ["1.25rem", { lineHeight: "1.75rem", letterSpacing: "-0.01em", fontWeight: "600" }] } } } };</script><style>@layer base{html,body{width:100%;margin:0;padding:0;min-height:100vh;}body{overscroll-behavior-y:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>body { min-height: max(884px, 100dvh); }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface font-body-md flex flex-col min-h-screen relative antialiased"><header class="fixed top-0 w-full z-50 bg-surface/85 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-gutter-sm flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm"><div class="w-9 h-9 rounded-lg bg-primary-container text-on-primary flex items-center justify-center"><span class="material-symbols-outlined text-[20px]">shield_person</span></div><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm font-bold text-primary tracking-tight">JobConnect</span><span class="font-label-sm text-[10px] uppercase font-bold text-secondary bg-secondary-fixed px-1.5 py-0.5 rounded">Admin</span></div><span class="font-label-sm text-label-sm text-on-surface-variant leading-none">Management Console</span></div></div><div class="flex items-center gap-space-xs"><a class="h-10 px-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center gap-space-xs active:scale-95 transition-all" data-path="user-dashboard" href="#" title="Switch to User Mode"><span class="material-symbols-outlined text-[18px] text-secondary">swap_horiz</span><span class="font-label-sm text-label-sm font-medium">User Mode</span></a><button aria-label="Admin notifications" class="relative w-10 h-10 flex items-center justify-center rounded-lg text-on-surface hover:bg-surface-container active:scale-95 transition-all" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-error ring-2 ring-surface"></span></button></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-20 bg-surface"><div class="flex flex-col w-full pb-6 px-gutter-sm">
+<!-- Context Switcher & Sub-Header -->
+<div class="flex flex-col gap-space-xs mt-space-sm mb-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-bold">Admin Console</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Platform Hub</span>
+</div>
+<button class="flex items-center gap-space-2xs px-2.5 py-1 rounded-full bg-surface-container text-on-surface text-label-sm font-label-sm active:scale-95 transition-transform" type="button">
+<span class="material-symbols-outlined text-[16px] text-secondary">calendar_today</span>
+<span>Last 30 Days</span>
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant">expand_more</span>
+</button>
+</div>
+<!-- Tenant & Global Scope Trigger -->
+<div class="flex items-center justify-between bg-surface-container-lowest p-space-sm rounded-xl shadow-sm">
+<div class="flex items-center gap-space-xs min-w-0">
+<div class="w-8 h-8 rounded-lg bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed shrink-0">
+<span class="material-symbols-outlined text-[18px]">public</span>
+</div>
+<div class="min-w-0">
+<span class="font-label-xs text-[10px] text-on-surface-variant uppercase tracking-wider block font-semibold">Tenant Scope</span>
+<p class="font-headline-sm text-headline-sm text-primary font-bold truncate">Global Operations (All Regions)</p>
+</div>
+</div>
+<button aria-label="Switch Tenant" class="w-8 h-8 flex items-center justify-center rounded-lg bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors shrink-0">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+</div>
+</div>
+<!-- Primary Action Bar (Compact Horizontal Scroll) -->
+<div class="flex gap-space-xs overflow-x-auto pb-1 mb-space-md no-scrollbar">
+<button class="shrink-0 flex items-center gap-space-xs px-3.5 py-2 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md shadow-sm active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span>Post Urgent Role</span>
+</button>
+<button class="shrink-0 flex items-center gap-space-xs px-3.5 py-2 rounded-lg bg-surface-container-lowest text-primary font-label-md text-label-md shadow-sm hover:bg-surface-container active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[18px] text-secondary">file_download</span>
+<span>Export CSV</span>
+</button>
+<button class="shrink-0 flex items-center gap-space-xs px-3.5 py-2 rounded-lg bg-surface-container-lowest text-on-surface font-label-md text-label-md shadow-sm hover:bg-surface-container active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">corporate_fare</span>
+<span>Manage Employers</span>
+</button>
+</div>
+<!-- KPI Metric Cards (2x2 Grid) -->
+<div class="grid grid-cols-2 gap-space-xs mb-space-md">
+<!-- Active Jobs -->
+<div class="bg-surface-container-lowest p-space-sm rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">Active Jobs</span>
+<div class="w-7 h-7 rounded-lg bg-secondary-fixed flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[16px]">work_outline</span>
+</div>
+</div>
+<div>
+<p class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">1,428</p>
+<div class="flex items-center gap-1 mt-1">
+<span class="flex items-center text-[11px] font-bold text-tertiary-container bg-tertiary-fixed/60 px-1.5 py-0.5 rounded-full">
+<span class="material-symbols-outlined text-[12px] mr-0.5 font-bold">trending_up</span>+12.4%
+          </span>
+<span class="font-label-sm text-[10px] text-on-surface-variant truncate">vs last mo</span>
+</div>
+</div>
+</div>
+<!-- Total Candidates -->
+<div class="bg-surface-container-lowest p-space-sm rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">Candidates</span>
+<div class="w-7 h-7 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[16px]">group</span>
+</div>
+</div>
+<div>
+<p class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">38,920</p>
+<div class="flex items-center gap-1 mt-1">
+<span class="flex items-center text-[11px] font-bold text-tertiary-container bg-tertiary-fixed/60 px-1.5 py-0.5 rounded-full">
+<span class="material-symbols-outlined text-[12px] mr-0.5 font-bold">trending_up</span>+8.1%
+          </span>
+<span class="font-label-sm text-[10px] text-on-surface-variant truncate">vs last mo</span>
+</div>
+</div>
+</div>
+<!-- Applications Submitted -->
+<div class="bg-surface-container-lowest p-space-sm rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">Applications</span>
+<div class="w-7 h-7 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[16px]">outgoing_mail</span>
+</div>
+</div>
+<div>
+<p class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">14,230</p>
+<div class="flex items-center gap-1 mt-1">
+<span class="flex items-center text-[11px] font-bold text-tertiary-container bg-tertiary-fixed/60 px-1.5 py-0.5 rounded-full">
+<span class="material-symbols-outlined text-[12px] mr-0.5 font-bold">trending_up</span>+24.5%
+          </span>
+<span class="font-label-sm text-[10px] text-on-surface-variant truncate">vs last mo</span>
+</div>
+</div>
+</div>
+<!-- Placements Made -->
+<div class="bg-surface-container-lowest p-space-sm rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">Placements</span>
+<div class="w-7 h-7 rounded-lg bg-tertiary-fixed flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+</div>
+<div>
+<p class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">342</p>
+<div class="flex items-center gap-1 mt-1">
+<span class="flex items-center text-[10px] font-semibold text-on-surface-variant bg-surface-container-low px-1.5 py-0.5 rounded-full">
+<span class="material-symbols-outlined text-[11px] mr-0.5 text-secondary">timer</span>18d avg hire
+          </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Hiring Pipeline Funnel Overview -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm mb-space-md">
+<div class="flex items-center justify-between mb-space-sm">
+<div>
+<h2 class="font-headline-sm text-headline-sm font-bold text-primary">Hiring Funnel Velocity</h2>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Conversion across application lifecycle</span>
+</div>
+<div class="text-right">
+<span class="font-headline-sm text-headline-sm font-bold text-tertiary-container">81.4%</span>
+<span class="block font-label-sm text-[10px] text-on-surface-variant uppercase font-semibold">Offer Acceptance</span>
+</div>
+</div>
+<!-- Funnel Multi-segment Visual Indicator -->
+<div class="w-full h-3 rounded-full bg-surface-container-low flex overflow-hidden mb-space-sm">
+<div class="bg-primary-container h-full" style="width: 38%;" title="Applied"></div>
+<div class="bg-secondary h-full" style="width: 25%;" title="Screened"></div>
+<div class="bg-secondary-container h-full" style="width: 18%;" title="Interviewed"></div>
+<div class="bg-surface-tint h-full" style="width: 10%;" title="Offered"></div>
+<div class="bg-tertiary-fixed-dim h-full" style="width: 9%;" title="Hired"></div>
+</div>
+<!-- Funnel Stage Micro Metrics -->
+<div class="grid grid-cols-5 gap-1 pt-1 text-center">
+<div class="flex flex-col items-center">
+<span class="w-2 h-2 rounded-full bg-primary-container mb-1"></span>
+<span class="font-label-sm text-[10px] text-on-surface-variant">Applied</span>
+<span class="font-label-md text-label-md font-bold text-on-surface">14.2k</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="w-2 h-2 rounded-full bg-secondary mb-1"></span>
+<span class="font-label-sm text-[10px] text-on-surface-variant">Screened</span>
+<span class="font-label-md text-label-md font-bold text-on-surface">8,410</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="w-2 h-2 rounded-full bg-secondary-container mb-1"></span>
+<span class="font-label-sm text-[10px] text-on-surface-variant">Interview</span>
+<span class="font-label-md text-label-md font-bold text-on-surface">3,150</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="w-2 h-2 rounded-full bg-surface-tint mb-1"></span>
+<span class="font-label-sm text-[10px] text-on-surface-variant">Offered</span>
+<span class="font-label-md text-label-md font-bold text-on-surface">420</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim mb-1"></span>
+<span class="font-label-sm text-[10px] text-on-surface-variant font-bold text-tertiary">Hired</span>
+<span class="font-label-md text-label-md font-bold text-tertiary">342</span>
+</div>
+</div>
+</div>
+<!-- Growth & Volume Overview Chart -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm mb-space-md">
+<div class="flex items-center justify-between mb-space-sm">
+<div>
+<h2 class="font-headline-sm text-headline-sm font-bold text-primary">Candidate vs Listing Cadence</h2>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Weekly distribution comparison</p>
+</div>
+<div class="flex items-center gap-space-xs text-[11px] font-label-sm">
+<span class="flex items-center gap-1 text-on-surface-variant"><span class="w-2 h-2 rounded-full bg-secondary"></span>Candidates</span>
+<span class="flex items-center gap-1 text-on-surface-variant"><span class="w-2 h-2 rounded-full bg-surface-variant"></span>Listings</span>
+</div>
+</div>
+<!-- Inline Lightweight SVG Column Graph -->
+<div class="w-full h-32 flex items-end justify-between pt-2 pb-1">
+<!-- Week 1 -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+<div class="flex items-end gap-1 h-24">
+<div class="w-2.5 rounded-t bg-secondary" style="height: 60%;"></div>
+<div class="w-2.5 rounded-t bg-surface-container-highest" style="height: 35%;"></div>
+</div>
+<span class="font-label-sm text-[10px] text-on-surface-variant">W1</span>
+</div>
+<!-- Week 2 -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+<div class="flex items-end gap-1 h-24">
+<div class="w-2.5 rounded-t bg-secondary" style="height: 75%;"></div>
+<div class="w-2.5 rounded-t bg-surface-container-highest" style="height: 48%;"></div>
+</div>
+<span class="font-label-sm text-[10px] text-on-surface-variant">W2</span>
+</div>
+<!-- Week 3 -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+<div class="flex items-end gap-1 h-24">
+<div class="w-2.5 rounded-t bg-secondary" style="height: 90%;"></div>
+<div class="w-2.5 rounded-t bg-surface-container-highest" style="height: 65%;"></div>
+</div>
+<span class="font-label-sm text-[10px] text-on-surface-variant">W3</span>
+</div>
+<!-- Week 4 (Current) -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end bg-surface-container-low/60 rounded-lg p-0.5">
+<div class="flex items-end gap-1 h-24">
+<div class="w-2.5 rounded-t bg-primary-container" style="height: 100%;"></div>
+<div class="w-2.5 rounded-t bg-secondary-container" style="height: 82%;"></div>
+</div>
+<span class="font-label-sm text-[10px] font-bold text-primary">W4</span>
+</div>
+</div>
+</div>
+<!-- Pending Review & Moderation Queue -->
+<div class="flex flex-col gap-space-sm mb-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<h2 class="font-headline-sm text-headline-sm font-bold text-primary">Review &amp; Moderation</h2>
+<span class="px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-bold">3 Pending</span>
+</div>
+<button class="font-label-sm text-label-sm text-secondary font-semibold hover:underline" type="button">View All (12)</button>
+</div>
+<!-- Moderation Item 1: Pending Verification -->
+<div class="bg-surface-container-lowest p-space-sm rounded-xl shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary font-bold text-label-lg shrink-0">
+            NX
+          </div>
+<div class="min-w-0">
+<h3 class="font-headline-sm text-[15px] font-bold text-on-surface truncate">Senior DevOps Engineer</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Nexus AI • San Francisco, CA (Remote)</p>
+</div>
+</div>
+<span class="shrink-0 px-2 py-0.5 rounded-full bg-surface-container-highest text-primary font-label-sm text-[10px] font-bold uppercase tracking-wider">
+          New Listing
+        </span>
+</div>
+<div class="flex items-center justify-between pt-space-2xs">
+<div class="flex items-center gap-space-2xs text-[11px] text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px] text-tertiary">schedule</span>
+<span>Submitted 2h ago</span>
+<span>•</span>
+<span class="font-semibold text-on-surface">$165k - $190k</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-2.5 py-1 rounded bg-surface-container-low text-error font-label-sm text-label-sm font-semibold hover:bg-error-container active:scale-95 transition-all">
+            Reject
+          </button>
+<button class="px-3 py-1 rounded bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold active:scale-95 transition-all">
+            Approve
+          </button>
+</div>
+</div>
+</div>
+<!-- Moderation Item 2: Flagged Listing -->
+<div class="bg-surface-container-lowest p-space-sm rounded-xl shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs">
+<div class="w-10 h-10 rounded-lg bg-error-container/40 flex items-center justify-center text-error font-bold text-label-lg shrink-0">
+            CS
+          </div>
+<div class="min-w-0">
+<h3 class="font-headline-sm text-[15px] font-bold text-on-surface truncate">Fullstack Ruby Developer</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">CodeStream • Austin, TX</p>
+</div>
+</div>
+<span class="shrink-0 px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">flag</span> Duplicate
+        </span>
+</div>
+<div class="flex items-center justify-between pt-space-2xs">
+<div class="flex items-center gap-space-2xs text-[11px] text-error font-medium">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+<span>Matches 94% with Job #89201</span>
+</div>
+<button class="px-3 py-1 rounded bg-secondary text-on-secondary font-label-sm text-label-sm font-semibold active:scale-95 transition-all">
+          Investigate
+        </button>
+</div>
+</div>
+<!-- Moderation Item 3: Approved & Live Status -->
+<div class="bg-surface-container-lowest p-space-sm rounded-xl shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary font-bold text-label-lg shrink-0">
+            SF
+          </div>
+<div class="min-w-0">
+<h3 class="font-headline-sm text-[15px] font-bold text-on-surface truncate">VP of Product</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Stealth Fintech • New York, NY</p>
+</div>
+</div>
+<span class="shrink-0 px-2 py-0.5 rounded-full bg-tertiary-fixed text-tertiary font-label-sm text-[10px] font-bold uppercase tracking-wider">
+          Active
+        </span>
+</div>
+<div class="flex items-center justify-between pt-space-2xs">
+<div class="flex items-center gap-space-2xs text-[11px] text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px] text-secondary">insights</span>
+<span>48 applicants in 24h</span>
+<span>•</span>
+<span class="font-semibold text-tertiary">Verified Sponsor</span>
+</div>
+<button class="px-3 py-1 rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold hover:bg-surface-container-high active:scale-95 transition-all">
+          Manage
+        </button>
+</div>
+</div>
+</div>
+<!-- System Health & Platform Integrity -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm mb-space-sm">
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<div class="w-2.5 h-2.5 rounded-full bg-tertiary-fixed-dim"></div>
+<h2 class="font-headline-sm text-headline-sm font-bold text-primary">System Telemetry</h2>
+</div>
+<span class="font-label-sm text-label-sm font-semibold text-tertiary bg-tertiary-fixed px-2 py-0.5 rounded">All Systems Green</span>
+</div>
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-secondary">sync_alt</span>
+<span class="font-label-md text-label-md text-on-surface font-medium">ATS Ingest Webhooks</span>
+</div>
+<span class="font-label-md text-label-md font-bold text-primary">99.98% Healthy</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-tertiary">mark_email_read</span>
+<span class="font-label-md text-label-md text-on-surface font-medium">Candidate Email Delivery</span>
+</div>
+<span class="font-label-md text-label-md font-bold text-tertiary">100.0% Optimal</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-secondary-container">psychology</span>
+<span class="font-label-md text-label-md text-on-surface font-medium">AI Match Ranker</span>
+</div>
+<span class="font-label-md text-label-md font-bold text-on-surface">140ms latency</span>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function initDashboardInteractions() {
+    const actionButtons = document.querySelectorAll('button');
+    actionButtons.forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        if (this.textContent.trim().includes('Approve')) {
+          const card = this.closest('.bg-surface-container-lowest');
+          this.textContent = 'Approved';
+          this.classList.remove('bg-primary-container', 'text-on-primary');
+          this.classList.add('bg-tertiary-fixed', 'text-tertiary');
+        } else if (this.textContent.trim().includes('Reject')) {
+          const card = this.closest('.bg-surface-container-lowest');
+          this.textContent = 'Rejected';
+          this.classList.add('bg-error', 'text-on-error');
+        }
+      });
+    });
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_-1px_8px_rgba(0,0,0,0.04)]" data-active-classes="text-secondary font-bold"><div class="flex justify-around items-center h-16 px-gutter-sm max-w-md mx-auto"><a aria-current="page" class="flex flex-col items-center justify-center min-w-[56px] h-12 rounded-lg active:scale-95 transition-all text-secondary font-bold" data-path="admin-dashboard" href="#"><span class="material-symbols-outlined text-[22px]">analytics</span><span class="font-label-sm text-label-sm mt-0.5">Overview</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-12 rounded-lg text-on-surface-variant hover:text-on-surface active:scale-95 transition-all" data-path="admin-jobs" href="#"><span class="material-symbols-outlined text-[22px]">assignment</span><span class="font-label-sm text-label-sm mt-0.5">Jobs</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-12 rounded-lg text-on-surface-variant hover:text-on-surface active:scale-95 transition-all" data-path="admin-candidates" href="#"><span class="material-symbols-outlined text-[22px]">group</span><span class="font-label-sm text-label-sm mt-0.5">Candidates</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-12 rounded-lg text-on-surface-variant hover:text-on-surface active:scale-95 transition-all" data-path="admin-analytics" href="#"><span class="material-symbols-outlined text-[22px]">insights</span><span class="font-label-sm text-label-sm mt-0.5">Analytics</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-12 rounded-lg text-on-surface-variant hover:text-on-surface active:scale-95 transition-all" data-path="admin-settings" href="#"><span class="material-symbols-outlined text-[22px]">settings</span><span class="font-label-sm text-label-sm mt-0.5">Settings</span></a></div></nav></body></html>

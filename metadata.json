@@ -1,0 +1,6 @@
+{
+  "name": "JobConnect – Complete Job Portal",
+  "description": "Executive technical & product leadership job discovery, application tracking, candidate profile management, and admin operations console.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,4 +1,4 @@
-# Multi-stage production Dockerfile for JobConnect Spring Boot Backend (Google Cloud Run)
+# Multi-stage production Dockerfile for JobConnect Spring Boot Backend (Render / Docker)
 FROM maven:3.9.9-eclipse-temurin-17 AS builder
 WORKDIR /workspace
 

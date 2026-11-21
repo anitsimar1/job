@@ -30,10 +30,15 @@ jobconnect/
 │   │   ├── application.properties
 │   │   └── application-prod.properties
 │   ├── src/test/               # JUnit 5 + Mockito + MockMvc security & service tests
-│   ├── Dockerfile              # Multi-stage Java 17 Cloud Run container build
+│   ├── Dockerfile              # Multi-stage Java 17 Render / Docker build
 │   ├── .dockerignore
 │   ├── .env.example
 │   └── pom.xml
+├── .github/workflows/
+│   ├── deploy-frontend-vercel.yml
+│   └── deploy-backend-render.yml
+├── vercel.json                 # Vercel SPA rewrites & Vite build config
+├── render.yaml                 # Render Docker web service blueprint
 ├── .env.example
 ├── package.json
 └── README.md
@@ -169,82 +174,60 @@ JobConnect uses Spring Security OAuth2 Client Authorization Code Flow with state
 
 ### Production Profile (`SPRING_PROFILES_ACTIVE=prod`)
 Run with `-Dspring-boot.run.profiles=prod` (or `SPRING_PROFILES_ACTIVE=prod`) to activate `application-prod.properties`, which enforces:
-- Cloud Run `PORT` binding (`server.port=${PORT:${SERVER_PORT:8080}}`) & `server.forward-headers-strategy=framework`
-- SSL MySQL JDBC or Cloud SQL Auth Proxy socket connection (`DB_URL` or `DB_HOST`)
-- `Secure` `HttpOnly` cookies (`JWT_COOKIE_SECURE=true`, `JWT_COOKIE_SAME_SITE=None` for cross-origin HTTPS `*.run.app` domains, or `Lax` for same-origin reverse proxy)
+- Dynamic container `PORT` binding (`server.port=${PORT:${SERVER_PORT:8080}}`) & `server.forward-headers-strategy=framework`
+- Existing MySQL 8 JDBC connection (`DB_URL` or `DB_HOST` / `DB_PORT` / `DB_NAME`)
+- `Secure` `HttpOnly` cookies (`JWT_COOKIE_SECURE=true`, `JWT_COOKIE_SAME_SITE=None` for cross-origin HTTPS Vercel + Render domains, or `Lax` for same-origin reverse proxy)
 - Writable container upload storage (`/tmp/jobconnect/resumes` by default)
 - Strict environment variables (`DB_URL`/`DB_HOST`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APP_CORS_ALLOWED_ORIGINS`, `APP_FRONTEND_AUTH_REDIRECT_URI`)
 
 ---
 
-## 4c. Deploying Spring Boot Backend to Google Cloud Run
+## 4c. Deploying Backend to Render & Frontend to Vercel
 
-### 1. Provision Cloud SQL for MySQL 8 (or External TLS MySQL)
-```bash
-gcloud sql instances create jobconnect-mysql \
-  --database-version=MYSQL_8_0 \
-  --tier=db-f1-micro \
-  --region=asia-northeast1
+### 1. Deploy Spring Boot Backend on Render (Docker)
+1. In **Render Dashboard**, create a **New Web Service** (or import `render.yaml`) pointing to your GitHub repository with:
+   - **Runtime:** Docker
+   - **Dockerfile Path:** `./backend/Dockerfile`
+   - **Docker Context:** `./backend`
+   - **Health Check Path:** `/api/health`
+2. Set the environment variables in Render using your **existing MySQL database**, JWT secret, Google OAuth credentials, and Vercel URL:
+   - `SPRING_PROFILES_ACTIVE=prod`
+   - `DB_URL` (or `DB_HOST`, `DB_PORT`, `DB_NAME`) + `DB_USERNAME` + `DB_PASSWORD`
+   - `JWT_SECRET` (strong Base64 secret, e.g. `openssl rand -base64 48`)
+   - `JWT_COOKIE_SECURE=true`, `JWT_COOKIE_SAME_SITE=None`
+   - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+   - `FRONTEND_URL=https://YOUR_VERCEL_APP.vercel.app`
+   - `APP_CORS_ALLOWED_ORIGINS=https://YOUR_VERCEL_APP.vercel.app`
+   - `APP_FRONTEND_AUTH_REDIRECT_URI=https://YOUR_VERCEL_APP.vercel.app/oauth/callback`
+3. Copy your Render service's **Deploy Hook URL** (Settings → Deploy Hook) for GitHub Actions.
 
-gcloud sql databases create jobconnect --instance=jobconnect-mysql
-gcloud sql users create jobconnect_app --instance=jobconnect-mysql --password="STRONG_DB_PASSWORD"
-```
+### 2. Configure Google Cloud Console OAuth Callback
+Once Render assigns your `BACKEND_URL` (e.g. `https://jobconnect-backend.onrender.com`):
+- Add `https://YOUR_VERCEL_APP.vercel.app` and `https://YOUR_RENDER_BACKEND.onrender.com` to **Authorized JavaScript origins**.
+- Add `https://YOUR_RENDER_BACKEND.onrender.com/login/oauth2/code/google` to **Authorized redirect URIs**.
 
-### 2. Store Secrets in Secret Manager
-```bash
-printf '%s' "STRONG_DB_PASSWORD" | gcloud secrets create jobconnect-db-password --data-file=-
-openssl rand -base64 48 | tr -d '\n' | gcloud secrets create jobconnect-jwt-secret --data-file=-
-printf '%s' "YOUR_GOOGLE_CLIENT_ID" | gcloud secrets create jobconnect-google-client-id --data-file=-
-printf '%s' "YOUR_GOOGLE_CLIENT_SECRET" | gcloud secrets create jobconnect-google-client-secret --data-file=-
-```
-
-### 3. Build & Deploy `backend/` to Cloud Run
-```bash
-cd backend
-gcloud run deploy jobconnect-backend \
-  --source . \
-  --region asia-northeast1 \
-  --platform managed \
-  --allow-unauthenticated \
-  --port 8080 \
-  --memory 1Gi \
-  --add-cloudsql-instances PROJECT_ID:asia-northeast1:jobconnect-mysql \
-  --set-env-vars "SPRING_PROFILES_ACTIVE=prod,DB_USERNAME=jobconnect_app,DB_URL=jdbc:mysql:///jobconnect?cloudSqlInstance=PROJECT_ID:asia-northeast1:jobconnect-mysql&socketFactory=com.google.cloud.sql.mysql.SocketFactory&createDatabaseIfNotExist=true&serverTimezone=UTC,APP_CORS_ALLOWED_ORIGINS=https://YOUR_FRONTEND_DOMAIN,APP_FRONTEND_AUTH_REDIRECT_URI=https://YOUR_FRONTEND_DOMAIN/oauth/callback" \
-  --set-secrets "DB_PASSWORD=jobconnect-db-password:latest,JWT_SECRET=jobconnect-jwt-secret:latest,GOOGLE_CLIENT_ID=jobconnect-google-client-id:latest,GOOGLE_CLIENT_SECRET=jobconnect-google-client-secret:latest"
-```
-
-### 4. Configure Google Cloud Console OAuth Callback
-Once Cloud Run outputs your `BACKEND_URL` (e.g., `https://jobconnect-backend-xxxx.a.run.app`):
-- Add `BACKEND_URL` and `FRONTEND_URL` to **Authorized JavaScript origins**.
-- Add `BACKEND_URL/login/oauth2/code/google` to **Authorized redirect URIs**.
-
-### 5. Connect the React Frontend
-Set `VITE_API_BASE_URL="https://YOUR_BACKEND_URL/api"` and `VITE_API_FALLBACK_TO_MOCK="false"` in your frontend build environment, then rebuild (`npm run build`).
+### 3. Deploy React Frontend on Vercel
+Set `VITE_API_BASE_URL="https://YOUR_RENDER_BACKEND.onrender.com/api"` and `VITE_API_FALLBACK_TO_MOCK="false"` in Vercel Project Environment Variables (or GitHub Secrets). `vercel.json` handles Vite builds and SPA client-side routing (`/oauth/callback`, `/auth`, `/dashboard`, `/admin`).
 
 ---
 
-## 4d. Automated One-Click CI/CD Deployment (AI Studio → GitHub → Cloud Build → Cloud Run)
+## 4d. Automated GitHub Actions CI/CD (Vercel + Render)
 
-This repository includes full Infrastructure & CI/CD automation so you never need to upload ZIPs manually:
+Two independent workflows run on every push/PR to `main` and via **Run workflow**:
 
-- `/Dockerfile` & `/nginx.conf.template` — Production React + Vite SPA container on Cloud Run
-- `/backend/Dockerfile` — Production Spring Boot Java 17 container on Cloud Run
-- `/cloudbuild.yaml` — Builds both images into Artifact Registry, deploys backend + frontend to Cloud Run, and automatically wires `VITE_API_BASE_URL`, `APP_CORS_ALLOWED_ORIGINS`, `APP_FRONTEND_AUTH_REDIRECT_URI`, and `GOOGLE_REDIRECT_URI`
-- `/scripts/bootstrap-gcp.sh` — One-time setup for GCP APIs, Artifact Registry, Cloud SQL MySQL 8, Secret Manager, IAM roles, and keyless GitHub Workload Identity Federation
-- `/.github/workflows/deploy-gcp.yml` — Runs `mvn test`, `npm run lint`, and `npm run build`, then triggers Cloud Build on every push to `main` or via GitHub Actions **Run workflow**
+- `/.github/workflows/deploy-frontend-vercel.yml` — Runs `npm ci`, `npm run lint` (`tsc --noEmit`), and `npm run build`, then deploys to **Vercel**.
+- `/.github/workflows/deploy-backend-render.yml` — Runs `mvn test -B` and `mvn package -DskipTests -B`, then triggers **Render** via its Deploy Hook.
 
-### One-Time Setup
-1. Sync/save your AI Studio project directly to a GitHub repository.
-2. Run `./scripts/bootstrap-gcp.sh` once (with `PROJECT_ID`, `GITHUB_REPO`, `DB_PASSWORD`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET` set).
-3. Add the printed `GCP_PROJECT_ID`, `GCP_WORKLOAD_IDENTITY_PROVIDER`, and `GCP_DEPLOYER_SA` values as GitHub Repository Secrets.
-4. Trigger **Deploy JobConnect to Google Cloud Run** in GitHub Actions (or push to `main`), then copy the printed `BACKEND_URL/login/oauth2/code/google` into Google Cloud Console OAuth Redirect URIs.
+### Required GitHub Repository Secrets
+- **Vercel Frontend Workflow:** `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, and `VITE_API_BASE_URL` (e.g. `https://jobconnect-backend.onrender.com/api`)
+- **Render Backend Workflow:** `RENDER_DEPLOY_HOOK_URL` (and optional `RENDER_BACKEND_URL` for summary output)
 
 ---
 
 ## 5. REST API Endpoints
 
 ### Health & Authentication
-- `GET /api/health` — Public Cloud Run readiness / health check
+- `GET /api/health` — Public readiness / health check (Render health check)
 - `POST /api/auth/register` — Register new job seeker account
 - `POST /api/auth/login` — Authenticate and set HttpOnly JWT cookie
 - `POST /api/auth/logout` — Revoke JWT token and clear cookie

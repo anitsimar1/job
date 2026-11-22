@@ -4,7 +4,7 @@ WORKDIR /workspace
 
 # Cache Maven dependencies before copying source
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
+RUN mvn -B -ntp dependency:go-offline
 
 # Build executable Spring Boot fat JAR and normalize output filename
 COPY src ./src

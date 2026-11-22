@@ -63,7 +63,7 @@ interface RetryableRequestConfig extends InternalAxiosRequestConfig {
 
 export const axiosInstance: AxiosInstance = axios.create({
   baseURL: API_BASE_URL || undefined,
-  timeout: 15000,
+  timeout: 65000,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -140,7 +140,7 @@ axiosInstance.interceptors.response.use(
         const refreshRes = await axios.post<JwtTokenPair | ApiResponse<JwtTokenPair>>(
           `${API_BASE_URL}/auth/refresh`,
           { refreshToken },
-          { headers: { 'Content-Type': 'application/json' }, timeout: 10000 }
+          { headers: { 'Content-Type': 'application/json' }, timeout: 30000 }
         );
         const tokens = unwrapApiResponse<JwtTokenPair>(refreshRes.data);
         tokenStorage.setTokens(tokens, tokenStorage.isRemembered());
@@ -201,10 +201,16 @@ export function normalizeApiError(error: unknown): ApiError {
   if (axios.isAxiosError(error)) {
     const axiosErr = error as AxiosError<ApiErrorPayload>;
     if (!axiosErr.response) {
+      const isTimeout =
+        axiosErr.code === 'ECONNABORTED' ||
+        axiosErr.code === 'ETIMEDOUT' ||
+        /timeout/i.test(axiosErr.message || '');
       return new ApiError({
-        message: axiosErr.message || 'Unable to reach backend server',
-        status: 0,
-        code: 'NETWORK_ERROR',
+        message: isTimeout
+          ? 'The server is taking longer than expected to respond (cold start). Please try again in a few seconds.'
+          : axiosErr.message || 'Unable to reach backend server',
+        status: isTimeout ? 408 : 0,
+        code: isTimeout ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR',
         isNetworkError: true,
       });
     }

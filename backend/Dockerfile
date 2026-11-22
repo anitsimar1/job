@@ -2,13 +2,17 @@
 FROM maven:3.9.9-eclipse-temurin-17 AS builder
 WORKDIR /workspace
 
-# Cache Maven dependencies before copying source
+# Install retry wrapper for transient Maven Central 429/5xx errors
+COPY mvn-with-retry.sh /usr/local/bin/mvn-with-retry.sh
+RUN chmod +x /usr/local/bin/mvn-with-retry.sh
+
+# Cache Maven dependencies in a separate layer before copying application source
 COPY pom.xml .
-RUN mvn -B -ntp dependency:go-offline
+RUN /usr/local/bin/mvn-with-retry.sh dependency:go-offline
 
 # Build executable Spring Boot fat JAR and normalize output filename
 COPY src ./src
-RUN mvn clean package -DskipTests -B \
+RUN /usr/local/bin/mvn-with-retry.sh package -DskipTests \
     && cp target/jobconnect-backend-*.jar /workspace/app.jar
 
 FROM eclipse-temurin:17-jre-jammy AS runtime
@@ -23,7 +27,7 @@ COPY --from=builder --chown=spring:spring /workspace/app.jar /app/app.jar
 
 USER spring:spring
 
-# Cloud Run injects PORT dynamically (default 8080)
+# Render injects PORT dynamically (default 8080)
 ENV SPRING_PROFILES_ACTIVE=prod
 ENV PORT=8080
 EXPOSE 8080

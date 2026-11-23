@@ -18,6 +18,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -107,6 +108,39 @@ class ApplicationServiceTest {
         assertThat(result.id()).isEqualTo(101L);
         assertThat(result.resumeId()).isNull();
         verify(resumeRepository, never()).findByIdAndUserId(any(), any());
+    }
+
+    @Test
+    void applyForJob_fallsBackWhenResumeIdDoesNotExistAndRejectsOtherUsersResume() {
+        ApplicationRequest staleReq = new ApplicationRequest(
+                55L, 999L, "Stale resume id.", "5-7 yrs", true, false, "2 Weeks"
+        );
+
+        when(userRepository.findByEmailIgnoreCase("elena@techmail.io")).thenReturn(Optional.of(seeker));
+        when(jobRepository.findById(55L)).thenReturn(Optional.of(openJob));
+        when(applicationRepository.existsByUserIdAndJobId(10L, 55L)).thenReturn(false);
+        when(resumeRepository.findByIdAndUserId(999L, 10L)).thenReturn(Optional.empty());
+        when(resumeRepository.existsById(999L)).thenReturn(false);
+        when(resumeRepository.findByUserIdOrderByUploadedAtDesc(10L)).thenReturn(List.of());
+        when(applicationRepository.save(any(Application.class))).thenAnswer(inv -> {
+            Application a = inv.getArgument(0);
+            a.setId(102L);
+            return a;
+        });
+
+        ApplicationDto fallbackResult = applicationService.applyForJob(staleReq, "elena@techmail.io");
+        assertThat(fallbackResult.id()).isEqualTo(102L);
+        assertThat(fallbackResult.resumeId()).isNull();
+
+        ApplicationRequest otherUserReq = new ApplicationRequest(
+                55L, 888L, "Other user resume.", "5-7 yrs", true, false, "2 Weeks"
+        );
+        when(resumeRepository.findByIdAndUserId(888L, 10L)).thenReturn(Optional.empty());
+        when(resumeRepository.existsById(888L)).thenReturn(true);
+
+        assertThatThrownBy(() -> applicationService.applyForJob(otherUserReq, "elena@techmail.io"))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessageContaining("Selected resume does not exist or belong to your account");
     }
 
     @Test

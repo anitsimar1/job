@@ -693,6 +693,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     async (payload: LoginPayload) => {
       try {
         const session = await authService.login(payload);
+        if (!IS_MOCK_MODE) {
+          setProfile((prev) => ({
+            ...prev,
+            fullName: session.userName || prev.fullName,
+            email: session.userEmail || prev.email,
+            resumes: [],
+          }));
+        }
         setAuthSession(session);
         showToast(
           session.isDemoMode ? 'Signed in (Preview Mode)' : 'Signed in successfully',
@@ -718,6 +726,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           fullName: payload.fullName || prev.fullName,
           email: payload.email || prev.email,
           phone: payload.phone || prev.phone,
+          resumes: IS_MOCK_MODE ? prev.resumes : [],
         }));
         showToast(
           session.isDemoMode ? 'Candidate account created (Preview Mode)' : 'Account registered',

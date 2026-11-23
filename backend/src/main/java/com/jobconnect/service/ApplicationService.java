@@ -65,10 +65,20 @@ public class ApplicationService {
         }
 
         Resume resume = null;
-        if (request.resumeId() != null) {
+        if (request.resumeId() != null && request.resumeId() > 0) {
             resume = resumeRepository.findByIdAndUserId(request.resumeId(), user.getId())
-                    .orElseThrow(() -> new AccessDeniedException(
-                            "Selected resume does not exist or belong to your account"));
+                    .orElse(null);
+            if (resume == null) {
+                if (resumeRepository.existsById(request.resumeId())) {
+                    throw new AccessDeniedException(
+                            "Selected resume does not exist or belong to your account");
+                }
+                List<Resume> userResumes = resumeRepository.findByUserIdOrderByUploadedAtDesc(user.getId());
+                resume = userResumes.stream()
+                        .filter(Resume::isDefault)
+                        .findFirst()
+                        .orElse(userResumes.isEmpty() ? null : userResumes.get(0));
+            }
         }
 
         Application app = new Application();

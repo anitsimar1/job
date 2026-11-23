@@ -4,9 +4,32 @@ import { MobileTabShell } from '../components/layout/MobileTabShell';
 import { SafeImage } from '../components/common/SafeImage';
 import { OfferReviewModal } from '../components/modals/OfferReviewModal';
 import { useApp } from '../context/AppContext';
-import { ApplicationStatus } from '../types';
+import { ApplicationStatus, JobApplication, OfferSpotlight } from '../types';
 
 type FilterTabKey = 'all' | ApplicationStatus;
+
+function buildOfferFromApp(app: JobApplication): OfferSpotlight {
+  const offerId = app.id.startsWith('app-') || app.id.startsWith('offer-') ? app.id : `app-${app.id}`;
+  const status =
+    app.stageBadge === 'Offer Accepted'
+      ? 'accepted'
+      : app.stageBadge === 'Offer Declined'
+      ? 'declined'
+      : 'pending';
+  return {
+    id: offerId,
+    jobId: app.jobId,
+    company: app.company,
+    companyLogo: app.companyLogo,
+    roleTitle: app.jobTitle,
+    compensation: app.salaryRange,
+    expiresIn: status === 'accepted' ? 'Accepted' : status === 'declined' ? 'Declined' : 'Expires in 7 days',
+    decisionDeadline: status === 'accepted' ? 'Onboarding Active' : 'Active Offer',
+    equityDetails: 'Standard equity & benefits package',
+    signingBonus: 'Included in offer letter',
+    status,
+  };
+}
 
 export function MyApplicationsPage() {
   const navigate = useNavigate();
@@ -22,11 +45,18 @@ export function MyApplicationsPage() {
   const [activeFilter, setActiveFilter] = useState<FilterTabKey>('all');
   const [sortNewest, setSortNewest] = useState(true);
   const [offerModalOpen, setOfferModalOpen] = useState(false);
+  const [selectedOffer, setSelectedOffer] = useState<OfferSpotlight | null>(null);
 
   const counts = useMemo(() => {
     const inReview = applications.filter((a) => a.status === 'in-review').length;
     const interviewing = applications.filter((a) => a.status === 'interviewing').length;
-    const offered = offerSpotlight.status === 'pending' || offerSpotlight.status === 'accepted' ? 1 : 0;
+    const offeredAppsCount = applications.filter((a) => a.status === 'offered').length;
+    const offered =
+      offeredAppsCount > 0
+        ? offeredAppsCount
+        : offerSpotlight.status === 'pending' || offerSpotlight.status === 'accepted'
+        ? 1
+        : 0;
     const archived = applications.filter((a) => a.status === 'archived').length;
     const activeTotal = applications.filter((a) => a.status !== 'archived').length;
     return {
@@ -38,6 +68,8 @@ export function MyApplicationsPage() {
       activeTotal,
     };
   }, [applications, offerSpotlight.status]);
+
+  const activeModalOffer = selectedOffer || offerSpotlight;
 
   const filteredApps = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -224,7 +256,10 @@ export function MyApplicationsPage() {
                 </span>
                 <button
                   className="px-space-md py-2 bg-tertiary-fixed hover:bg-tertiary-fixed-dim text-on-tertiary-fixed rounded-lg font-label-md text-label-md transition-all shadow-sm active:scale-95 flex items-center gap-1"
-                  onClick={() => setOfferModalOpen(true)}
+                  onClick={() => {
+                    setSelectedOffer(offerSpotlight);
+                    setOfferModalOpen(true);
+                  }}
                   type="button"
                 >
                   <span>Review Offer</span>
@@ -442,27 +477,52 @@ export function MyApplicationsPage() {
                       <span className="material-symbols-outlined text-[16px]">visibility</span>
                       <span>View Job</span>
                     </button>
-                    <button
-                      className={`px-space-md py-2 rounded-lg font-label-md text-label-md transition-colors flex items-center gap-1 active:scale-95 ${
-                        app.stageNumber === 4
-                          ? 'bg-secondary hover:bg-secondary-container text-on-secondary shadow-sm'
-                          : 'bg-surface-container hover:bg-surface-container-high text-secondary'
-                      }`}
-                      onClick={() =>
-                        showToast(
+                    {app.status === 'offered' ? (
+                      <button
+                        className="px-space-md py-2 rounded-lg font-label-md text-label-md transition-colors flex items-center gap-1 active:scale-95 bg-tertiary-container hover:bg-tertiary text-tertiary-fixed shadow-sm"
+                        onClick={() => {
+                          const normalizedAppOfferId =
+                            app.id.startsWith('app-') || app.id.startsWith('offer-')
+                              ? app.id
+                              : `app-${app.id}`;
+                          const offerObj =
+                            offerSpotlight.id === normalizedAppOfferId ||
+                            offerSpotlight.id === app.id
+                              ? offerSpotlight
+                              : buildOfferFromApp(app);
+                          setSelectedOffer(offerObj);
+                          setOfferModalOpen(true);
+                        }}
+                        type="button"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">verified</span>
+                        <span>
+                          {app.stageBadge === 'Offer Accepted' ? 'Offer Accepted' : 'Review Offer'}
+                        </span>
+                      </button>
+                    ) : (
+                      <button
+                        className={`px-space-md py-2 rounded-lg font-label-md text-label-md transition-colors flex items-center gap-1 active:scale-95 ${
                           app.stageNumber === 4
-                            ? 'Opening System Design prep rubric'
-                            : `Follow-up reminder sent for ${app.company}`,
-                          'event'
-                        )
-                      }
-                      type="button"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">
-                        {app.stageNumber === 4 ? 'event' : 'mail'}
-                      </span>
-                      <span>{app.stageNumber === 4 ? 'Prepare Interview' : 'Follow Up'}</span>
-                    </button>
+                            ? 'bg-secondary hover:bg-secondary-container text-on-secondary shadow-sm'
+                            : 'bg-surface-container hover:bg-surface-container-high text-secondary'
+                        }`}
+                        onClick={() =>
+                          showToast(
+                            app.stageNumber === 4
+                              ? 'Opening System Design prep rubric'
+                              : `Follow-up reminder sent for ${app.company}`,
+                            'event'
+                          )
+                        }
+                        type="button"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">
+                          {app.stageNumber === 4 ? 'event' : 'mail'}
+                        </span>
+                        <span>{app.stageNumber === 4 ? 'Prepare Interview' : 'Follow Up'}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </article>
@@ -472,10 +532,13 @@ export function MyApplicationsPage() {
       </div>
 
       <OfferReviewModal
-        offer={offerSpotlight}
-        onAccept={() => respondToOffer('accepted')}
-        onClose={() => setOfferModalOpen(false)}
-        onDecline={() => respondToOffer('declined')}
+        offer={activeModalOffer}
+        onAccept={() => respondToOffer('accepted', activeModalOffer)}
+        onClose={() => {
+          setOfferModalOpen(false);
+          setSelectedOffer(null);
+        }}
+        onDecline={() => respondToOffer('declined', activeModalOffer)}
         open={offerModalOpen}
       />
     </MobileTabShell>

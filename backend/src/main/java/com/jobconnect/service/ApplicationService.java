@@ -2,6 +2,7 @@ package com.jobconnect.service;
 
 import com.jobconnect.dto.ApplicationDto;
 import com.jobconnect.dto.ApplicationRequest;
+import com.jobconnect.dto.OfferDecisionResponse;
 import com.jobconnect.entity.*;
 import com.jobconnect.exception.BadRequestException;
 import com.jobconnect.exception.DuplicateResourceException;
@@ -17,9 +18,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class ApplicationService {
+
+    private static final Pattern NUMERIC_OFFER_ID_PATTERN =
+            Pattern.compile("^(?:(?:app|offer)-)?(\\d+)$", Pattern.CASE_INSENSITIVE);
 
     private final ApplicationRepository applicationRepository;
     private final UserRepository userRepository;
@@ -118,5 +125,65 @@ public class ApplicationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Application not found with id: " + id));
         app.setStatus(status);
         return dtoMapper.toApplicationDto(applicationRepository.save(app));
+    }
+
+    @Transactional
+    public ApplicationDto withdrawApplication(Long id, String userEmail) {
+        Application app = applicationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Application not found with id: " + id));
+
+        if (!app.getUser().getEmail().equalsIgnoreCase(userEmail)) {
+            throw new AccessDeniedException("You can only withdraw your own applications");
+        }
+
+        app.setStatus(ApplicationStatus.REJECTED);
+        return dtoMapper.toApplicationDto(applicationRepository.save(app));
+    }
+
+    @Transactional
+    public OfferDecisionResponse respondToOffer(String offerId, String decision, String userEmail) {
+        User user = userRepository.findByEmailIgnoreCase(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (decision == null) {
+            throw new BadRequestException("Offer decision must be 'accepted' or 'declined'");
+        }
+        String normalizedDecision = decision.trim().toLowerCase(Locale.ROOT);
+        if (!"accepted".equals(normalizedDecision) && !"declined".equals(normalizedDecision)) {
+            throw new BadRequestException("Offer decision must be 'accepted' or 'declined'");
+        }
+
+        Long applicationId = extractNumericApplicationId(offerId);
+        if (applicationId != null) {
+            Application app = applicationRepository.findById(applicationId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Offer application not found with id: " + applicationId));
+
+            if (!app.getUser().getId().equals(user.getId())) {
+                throw new AccessDeniedException("You cannot respond to another user's offer");
+            }
+
+            app.setStatus("accepted".equals(normalizedDecision)
+                    ? ApplicationStatus.HIRED
+                    : ApplicationStatus.REJECTED);
+            applicationRepository.save(app);
+            return new OfferDecisionResponse(offerId, normalizedDecision, app.getId());
+        }
+
+        return new OfferDecisionResponse(offerId, normalizedDecision, null);
+    }
+
+    private Long extractNumericApplicationId(String offerId) {
+        if (offerId == null) {
+            return null;
+        }
+        Matcher matcher = NUMERIC_OFFER_ID_PATTERN.matcher(offerId.trim());
+        if (!matcher.matches()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(matcher.group(1));
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 }

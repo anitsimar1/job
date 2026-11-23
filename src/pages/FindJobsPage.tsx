@@ -25,10 +25,10 @@ export function FindJobsPage() {
 
   const [query, setQuery] = useState(initialQ || '');
   const [workplace, setWorkplace] = useState<WorkplaceType | 'All'>('All');
-  const [employmentType, setEmploymentType] = useState<EmploymentType | 'All'>('Full-time');
-  const [minSalaryK, setMinSalaryK] = useState<number>(120);
+  const [employmentType, setEmploymentType] = useState<EmploymentType | 'All'>('All');
+  const [minSalaryK, setMinSalaryK] = useState<number>(80);
   const [selectedTech, setSelectedTech] = useState<string>('');
-  const [sortBy, setSortBy] = useState<NonNullable<JobSearchFilters['sortBy']>>('Most Relevant');
+  const [sortBy, setSortBy] = useState<NonNullable<JobSearchFilters['sortBy']>>('Latest Added');
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [page, setPage] = useState(0);

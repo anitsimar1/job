@@ -238,14 +238,17 @@ export const jobService = {
     return withMockFallback(
       async () => {
         const sort = mapSortParams(filters.sortBy);
+        const effectiveMinSalary =
+          filters.minSalaryK && filters.minSalaryK > 80 ? filters.minSalaryK : undefined;
         const hasFilters = Boolean(
           filters.query ||
+            filters.techTag ||
             filters.location ||
             (filters.sector && filters.sector !== 'All') ||
             (filters.workplace && filters.workplace !== 'All') ||
             (filters.employmentType && filters.employmentType !== 'All') ||
             (filters.experience && filters.experience !== 'All') ||
-            (filters.minSalaryK && filters.minSalaryK > 0)
+            effectiveMinSalary
         );
         const endpoint = hasFilters ? '/jobs/search' : '/jobs';
         const res = await apiClient.get<PaginatedResponse<SpringJobDto> | SpringJobDto[]>(endpoint, {
@@ -261,7 +264,7 @@ export const jobService = {
                 : undefined,
             experience:
               filters.experience && filters.experience !== 'All' ? filters.experience : undefined,
-            minSalaryK: filters.minSalaryK,
+            minSalaryK: effectiveMinSalary,
             page,
             size,
             sortBy: sort.sortBy,
@@ -307,7 +310,7 @@ export const jobService = {
   ): Promise<JobPosting | undefined> {
     return withMockFallback(
       async () => mapSpringJobToPosting(await apiClient.get<SpringJobDto>(`/jobs/${encodeURIComponent(id)}`)),
-      () => sourceJobs.find((j) => j.id === id) || sourceJobs[0]
+      () => sourceJobs.find((j) => j.id === id)
     );
   },
 

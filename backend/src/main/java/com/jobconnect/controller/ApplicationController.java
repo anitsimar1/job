@@ -3,6 +3,8 @@ package com.jobconnect.controller;
 import com.jobconnect.dto.ApiResponse;
 import com.jobconnect.dto.ApplicationDto;
 import com.jobconnect.dto.ApplicationRequest;
+import com.jobconnect.dto.OfferDecisionRequest;
+import com.jobconnect.dto.OfferDecisionResponse;
 import com.jobconnect.service.ApplicationService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -49,5 +51,27 @@ public class ApplicationController {
         return ResponseEntity.ok(ApiResponse.ok(
                 applicationService.getApplicationById(id, authentication.getName(), isAdmin)
         ));
+    }
+
+    @PatchMapping("/{id}/withdraw")
+    @PreAuthorize("hasAnyRole('JOB_SEEKER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<ApplicationDto>> withdrawApplication(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        ApplicationDto withdrawn = applicationService.withdrawApplication(id, authentication.getName());
+        return ResponseEntity.ok(ApiResponse.ok("Application withdrawn successfully", withdrawn));
+    }
+
+    @PatchMapping("/offers/{offerId}/decision")
+    @PreAuthorize("hasAnyRole('JOB_SEEKER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<OfferDecisionResponse>> respondToOffer(
+            @PathVariable String offerId,
+            @Valid @RequestBody OfferDecisionRequest request,
+            Authentication authentication
+    ) {
+        OfferDecisionResponse result =
+                applicationService.respondToOffer(offerId, request.decision(), authentication.getName());
+        return ResponseEntity.ok(ApiResponse.ok("Offer decision recorded", result));
     }
 }

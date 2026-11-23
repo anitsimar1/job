@@ -1,9 +1,12 @@
 package com.jobconnect.controller;
 
 import com.jobconnect.config.SecurityConfig;
+import com.jobconnect.dto.ApplicationDto;
 import com.jobconnect.dto.AuthResponse;
 import com.jobconnect.dto.JobDto;
+import com.jobconnect.dto.OfferDecisionResponse;
 import com.jobconnect.dto.UserSummaryDto;
+import com.jobconnect.entity.ApplicationStatus;
 import com.jobconnect.entity.JobStatus;
 import com.jobconnect.repository.RevokedTokenRepository;
 import com.jobconnect.security.CustomUserDetailsService;
@@ -37,14 +40,16 @@ import java.util.Set;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = {AuthController.class, JobController.class, AdminController.class, UserController.class, HealthController.class})
+@WebMvcTest(controllers = {AuthController.class, JobController.class, ApplicationController.class, AdminController.class, UserController.class, HealthController.class})
 @Import({
     SecurityConfig.class,
     JwtAuthenticationFilter.class,
@@ -229,5 +234,50 @@ class SecurityAuthorizationIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    @WithMockUser(username = "seeker@techmail.io", roles = "JOB_SEEKER")
+    void applicationEndpoints_allowApplyWithdrawAndOfferDecision() throws Exception {
+        ApplicationDto appDto = new ApplicationDto(
+                11L, 5L, "Seeker", "seeker@techmail.io", 8L, "new-post", "Staff Engineer",
+                "Anthropic", null, "Remote", "$180k", null, null, "Pitch",
+                "5-7 yrs", true, false, "2 Weeks", ApplicationStatus.APPLIED,
+                Instant.now(), Instant.now()
+        );
+        when(applicationService.applyForJob(any(), eq("seeker@techmail.io"))).thenReturn(appDto);
+        when(applicationService.withdrawApplication(11L, "seeker@techmail.io")).thenReturn(appDto);
+        when(applicationService.respondToOffer("offer-vercel-lead", "accepted", "seeker@techmail.io"))
+                .thenReturn(new OfferDecisionResponse("offer-vercel-lead", "accepted", null));
+
+        mockMvc.perform(post("/api/applications")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {"jobId": 8, "resumeId": null, "coverLetter": "Pitch"}
+                            """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.id").value(11));
+
+        mockMvc.perform(patch("/api/applications/11/withdraw"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        mockMvc.perform(patch("/api/applications/offers/offer-vercel-lead/decision")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {"decision": "accepted"}
+                            """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("accepted"));
+    }
+
+    @Test
+    void offerDecisionEndpoint_rejectsUnauthenticatedWith401() throws Exception {
+        mockMvc.perform(patch("/api/applications/offers/offer-vercel-lead/decision")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {"decision": "accepted"}
+                            """))
+                .andExpect(status().isUnauthorized());
     }
 }

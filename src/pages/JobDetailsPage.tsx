@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { MobileTabShell } from '../components/layout/MobileTabShell';
 import { SafeImage } from '../components/common/SafeImage';
 import { useApp } from '../context/AppContext';
+import { jobService } from '../services/jobService';
+import { JobPosting } from '../types';
 
 type DetailTab = 'overview' | 'responsibilities' | 'requirements' | 'perks';
 
@@ -11,15 +13,75 @@ export function JobDetailsPage() {
   const navigate = useNavigate();
   const { jobs, savedJobIds, appliedJobIds, toggleSaveJob, showToast } = useApp();
 
-  const job = jobs.find((j) => j.id === id) || jobs[0];
-  if (!job) {
-    return null;
-  }
-  const isSaved = savedJobIds.includes(job.id);
-  const isApplied = appliedJobIds.includes(job.id);
-
   const [activeTab, setActiveTab] = useState<DetailTab>('overview');
   const [showMatchBreakdown, setShowMatchBreakdown] = useState(false);
+  const [fetchedJob, setFetchedJob] = useState<JobPosting | undefined>(undefined);
+  const [loadingJob, setLoadingJob] = useState(false);
+
+  const jobFromContext = id ? jobs.find((j) => j.id === id) : jobs[0];
+
+  useEffect(() => {
+    if (!id || jobFromContext) {
+      setLoadingJob(false);
+      return;
+    }
+    let active = true;
+    setLoadingJob(true);
+    jobService
+      .getJobById(id, jobs)
+      .then((res) => {
+        if (active) setFetchedJob(res);
+      })
+      .catch(() => {
+        if (active) setFetchedJob(undefined);
+      })
+      .finally(() => {
+        if (active) setLoadingJob(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [id, jobFromContext, jobs]);
+
+  const job = jobFromContext || (fetchedJob && (!id || fetchedJob.id === id) ? fetchedJob : undefined);
+
+  if (loadingJob && !job) {
+    return (
+      <MobileTabShell pageLabel="Job Details">
+        <div className="px-gutter-sm py-16 flex flex-col items-center justify-center gap-3 text-center">
+          <span className="material-symbols-outlined text-[32px] text-secondary animate-spin">
+            progress_activity
+          </span>
+          <p className="font-body-md text-on-surface-variant">Loading role details...</p>
+        </div>
+      </MobileTabShell>
+    );
+  }
+
+  if (!job) {
+    return (
+      <MobileTabShell pageLabel="Job Details">
+        <div className="px-gutter-sm py-16 flex flex-col items-center justify-center gap-4 text-center">
+          <div className="w-14 h-14 rounded-full bg-surface-container-high flex items-center justify-center text-secondary">
+            <span className="material-symbols-outlined text-[28px]">work_off</span>
+          </div>
+          <h2 className="font-headline-sm font-bold text-on-surface">Job listing not found</h2>
+          <p className="font-body-sm text-on-surface-variant max-w-xs">
+            This posting may have been closed or removed. Browse the latest open roles instead.
+          </p>
+          <Link
+            className="px-5 py-2.5 rounded-xl bg-primary text-on-primary font-label-md font-semibold"
+            to="/jobs"
+          >
+            Browse Open Roles
+          </Link>
+        </div>
+      </MobileTabShell>
+    );
+  }
+
+  const isSaved = savedJobIds.includes(job.id);
+  const isApplied = appliedJobIds.includes(job.id);
 
   const scrollToSection = (tab: DetailTab, sectionId: string) => {
     setActiveTab(tab);

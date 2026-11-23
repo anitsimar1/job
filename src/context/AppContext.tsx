@@ -18,6 +18,7 @@ import {
   JobPosting,
   ModerationListing,
   OfferSpotlight,
+  ResumeDocument,
   UserSummary,
 } from '../types';
 import {
@@ -58,12 +59,14 @@ interface AppContextValue {
   toast: ToastState;
   showToast: (message: string, icon?: string) => void;
   toggleSaveJob: (jobId: string) => void;
-  quickApplyJob: (job: JobPosting) => Promise<void>;
+  quickApplyJob: (
+    job: JobPosting
+  ) => Promise<'applied' | 'already_applied' | 'auth_required' | 'error'>;
   submitApplication: (job: JobPosting, formData: ApplyFormData) => Promise<JobApplication>;
   withdrawApplication: (applicationId: string) => Promise<void>;
-  respondToOffer: (decision: 'accepted' | 'declined') => void;
+  respondToOffer: (decision: 'accepted' | 'declined', targetOffer?: OfferSpotlight) => Promise<void>;
   updateProfile: (updated: CandidateProfile) => Promise<void>;
-  uploadResume: (file: File) => Promise<void>;
+  uploadResume: (file: File) => Promise<ResumeDocument | null>;
   downloadResume: (resumeId: string, fileName: string) => Promise<void>;
   setDefaultResume: (resumeId: string) => void;
   deleteResume: (resumeId: string) => void;
@@ -85,6 +88,87 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | undefined>(undefined);
 
+const OFFER_DECISIONS_PREFIX = 'jobconnect_offer_decisions_';
+
+function loadOfferDecisions(email: string): Record<string, 'accepted' | 'declined'> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.localStorage.getItem(`${OFFER_DECISIONS_PREFIX}${email || 'guest'}`);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, 'accepted' | 'declined'>;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveOfferDecisions(email: string, decisions: Record<string, 'accepted' | 'declined'>): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(
+      `${OFFER_DECISIONS_PREFIX}${email || 'guest'}`,
+      JSON.stringify(decisions)
+    );
+  } catch {
+    // Ignore storage quota errors
+  }
+}
+
+function getDecisionFromRecord(
+  decisions: Record<string, 'accepted' | 'declined'>,
+  key: string
+): OfferSpotlight['status'] | undefined {
+  return Object.prototype.hasOwnProperty.call(decisions, key) ? decisions[key] : undefined;
+}
+
+function buildOfferFromApplication(
+  app: JobApplication,
+  decisions: Record<string, 'accepted' | 'declined'>
+): OfferSpotlight {
+  const offerId = app.id.startsWith('app-') || app.id.startsWith('offer-') ? app.id : `app-${app.id}`;
+  const storedStatus =
+    getDecisionFromRecord(decisions, offerId) ?? getDecisionFromRecord(decisions, app.id);
+  const derivedStatus: OfferSpotlight['status'] =
+    storedStatus ??
+    (app.stageBadge === 'Offer Accepted'
+      ? 'accepted'
+      : app.stageBadge === 'Offer Declined'
+      ? 'declined'
+      : 'pending');
+  return {
+    id: offerId,
+    jobId: app.jobId,
+    company: app.company,
+    companyLogo: app.companyLogo,
+    roleTitle: app.jobTitle,
+    compensation: app.salaryRange,
+    expiresIn:
+      derivedStatus === 'pending'
+        ? 'Expires in 7 days'
+        : derivedStatus === 'accepted'
+        ? 'Accepted'
+        : 'Declined',
+    decisionDeadline: derivedStatus === 'accepted' ? 'Onboarding Active' : 'Active Offer',
+    equityDetails: 'Standard equity & benefits package',
+    signingBonus: 'Included in offer letter',
+    status: derivedStatus,
+  };
+}
+
+function resolveOfferSpotlight(
+  apps: JobApplication[],
+  decisions: Record<string, 'accepted' | 'declined'>
+): OfferSpotlight {
+  const offeredApp = apps.find((a) => a.status === 'offered');
+  if (offeredApp) {
+    return buildOfferFromApplication(offeredApp, decisions);
+  }
+  const spotlightDecision = getDecisionFromRecord(decisions, INITIAL_OFFER_SPOTLIGHT.id);
+  return spotlightDecision
+    ? { ...INITIAL_OFFER_SPOTLIGHT, status: spotlightDecision }
+    : INITIAL_OFFER_SPOTLIGHT;
+}
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [jobs, setJobs] = useState<JobPosting[]>(INITIAL_JOBS);
   const [savedJobIds, setSavedJobIds] = useState<string[]>(() =>
@@ -93,8 +177,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [applications, setApplications] = useState<JobApplication[]>(() =>
     IS_MOCK_MODE ? INITIAL_APPLICATIONS : []
   );
-  const [offerSpotlight, setOfferSpotlight] = useState<OfferSpotlight>(INITIAL_OFFER_SPOTLIGHT);
-  const [profile, setProfile] = useState<CandidateProfile>(INITIAL_PROFILE);
+  const [profile, setProfile] = useState<CandidateProfile>(() =>
+    IS_MOCK_MODE
+      ? INITIAL_PROFILE
+      : {
+          ...INITIAL_PROFILE,
+          resumes: [],
+        }
+  );
   const [adminMetrics, setAdminMetrics] = useState<AdminMetrics>(INITIAL_ADMIN_METRICS);
   const [moderationQueue, setModerationQueue] = useState<ModerationListing[]>(
     INITIAL_MODERATION_QUEUE
@@ -115,6 +205,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       rememberMe: true,
     };
   });
+
+  const [offerDecisions, setOfferDecisions] = useState<Record<string, 'accepted' | 'declined'>>(() =>
+    loadOfferDecisions(authSession.userEmail)
+  );
+
+  useEffect(() => {
+    setOfferDecisions(loadOfferDecisions(authSession.userEmail));
+  }, [authSession.userEmail]);
+
+  const offerSpotlight = resolveOfferSpotlight(applications, offerDecisions);
 
   const [toast, setToast] = useState<ToastState>({
     visible: false,
@@ -193,7 +293,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
 
     jobService
-      .listJobs()
+      .listJobs({ sortBy: 'Latest Added' })
       .then((liveJobs) => {
         if (mounted && liveJobs.length > 0) setJobs(liveJobs);
       })
@@ -256,10 +356,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const quickApplyJob = useCallback(
-    async (job: JobPosting) => {
+    async (
+      job: JobPosting
+    ): Promise<'applied' | 'already_applied' | 'auth_required' | 'error'> => {
+      if (!IS_MOCK_MODE && !authSession.isAuthenticated) {
+        showToast('Please sign in to apply for jobs', 'lock');
+        return 'auth_required';
+      }
       if (applications.some((a) => a.jobId === job.id && a.status !== 'archived')) {
         showToast(`Already applied to ${job.company}`, 'info');
-        return;
+        return 'already_applied';
       }
       try {
         const defaultResume = profile.resumes.find((r) => r.isDefault) || profile.resumes[0];
@@ -270,7 +376,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             email: profile.email,
             phone: profile.phone,
             location: profile.location,
-            resumeId: defaultResume?.id || '1',
+            resumeId: defaultResume?.id || '',
             githubUrl: profile.links.github,
             linkedinUrl: profile.links.linkedin,
             experienceYears: '5-7 yrs',
@@ -280,40 +386,90 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             shortPitch: '1-Click Executive Application via JobConnect Profile.',
             consentAgreed: true,
           },
-          defaultResume?.fileName || 'Elena_Rostova_Staff_Frontend_2025.pdf'
+          defaultResume?.fileName || 'Profile Application'
         );
-        setApplications((prev) => [newApp, ...prev]);
+        setApplications((prev) => [newApp, ...prev.filter((a) => a.jobId !== job.id)]);
+        setJobs((prev) =>
+          prev.map((j) => {
+            if (j.id !== job.id) return j;
+            const nextCount = j.applicantsCount + 1;
+            return {
+              ...j,
+              applicantsCount: nextCount,
+              urgencyLabel: `${nextCount} applicants • ${j.employmentType}`,
+            };
+          })
+        );
         showToast(`Application submitted for ${job.title}`, 'verified');
+        return 'applied';
       } catch (err) {
-        showToast(normalizeApiError(err).message, 'error');
+        const apiError = normalizeApiError(err);
+        if (
+          apiError.status === 409 ||
+          apiError.message.toLowerCase().includes('already applied')
+        ) {
+          applicationService
+            .listApplications()
+            .then((fresh) => setApplications(fresh))
+            .catch(() => undefined);
+          showToast(`Already applied to ${job.company}`, 'info');
+          return 'already_applied';
+        }
+        showToast(apiError.message, 'error');
+        return 'error';
       }
     },
-    [applications, profile, showToast]
+    [applications, authSession.isAuthenticated, profile, showToast]
   );
 
   const submitApplication = useCallback(
     async (job: JobPosting, formData: ApplyFormData) => {
+      if (!IS_MOCK_MODE && !authSession.isAuthenticated) {
+        const message = 'Please sign in to submit your application';
+        showToast(message, 'lock');
+        throw new Error(message);
+      }
       try {
         const selectedResume =
           profile.resumes.find((r) => r.id === formData.resumeId) || profile.resumes[0];
         const newApp = await applicationService.submitApplication(
           job,
           formData,
-          selectedResume?.fileName || 'Elena_Rostova_Staff_Frontend_2025.pdf'
+          selectedResume?.fileName || 'Profile Application'
         );
         setApplications((prev) => {
           const filtered = prev.filter((a) => a.jobId !== job.id);
           return [newApp, ...filtered];
         });
+        setJobs((prev) =>
+          prev.map((j) => {
+            if (j.id !== job.id) return j;
+            const nextCount = j.applicantsCount + 1;
+            return {
+              ...j,
+              applicantsCount: nextCount,
+              urgencyLabel: `${nextCount} applicants • ${j.employmentType}`,
+            };
+          })
+        );
         showToast(`Application submitted to ${job.company}!`, 'verified');
         return newApp;
       } catch (err) {
         const apiError = normalizeApiError(err);
+        if (
+          apiError.status === 409 ||
+          apiError.message.toLowerCase().includes('already applied')
+        ) {
+          applicationService
+            .listApplications()
+            .then((fresh) => setApplications(fresh))
+            .catch(() => undefined);
+        }
         showToast(apiError.message, 'error');
         throw apiError;
       }
     },
-    [profile.resumes, showToast]
+    [authSession.isAuthenticated, profile.resumes, showToast]
   );
 
   const withdrawApplication = useCallback(
@@ -340,22 +496,75 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const respondToOffer = useCallback(
-    (decision: 'accepted' | 'declined') => {
-      applicationService
-        .respondToOffer(offerSpotlight.id, decision)
-        .then(() => {
-          setOfferSpotlight((prev) => ({ ...prev, status: decision }));
-          if (decision === 'accepted') {
-            showToast(`Congratulations! Offer accepted at ${offerSpotlight.company}`, 'celebration');
-          } else {
-            showToast(`Offer from ${offerSpotlight.company} marked declined`, 'info');
+    async (decision: 'accepted' | 'declined', targetOffer?: OfferSpotlight) => {
+      const target = targetOffer || offerSpotlight;
+      if (!IS_MOCK_MODE && !authSession.isAuthenticated) {
+        const message = 'Please sign in to respond to offers';
+        showToast(message, 'lock');
+        throw new Error(message);
+      }
+      try {
+        const res = await applicationService.respondToOffer(target.id, decision);
+        setOfferDecisions((prev) => {
+          const next: Record<string, 'accepted' | 'declined'> = {
+            ...prev,
+            [target.id]: decision,
+          };
+          if (res.applicationId != null) {
+            next[`app-${res.applicationId}`] = decision;
+            next[String(res.applicationId)] = decision;
           }
-        })
-        .catch((err) => {
-          showToast(normalizeApiError(err).message, 'error');
+          saveOfferDecisions(authSession.userEmail, next);
+          return next;
         });
+
+        const matchedAppId =
+          res.applicationId != null
+            ? String(res.applicationId)
+            : target.id.replace(/^(?:app|offer)-/i, '');
+
+        setApplications((prev) =>
+          prev.map((app) => {
+            if (app.id !== matchedAppId && app.id !== target.id) return app;
+            if (decision === 'accepted') {
+              return {
+                ...app,
+                status: 'offered',
+                stageBadge: 'Offer Accepted',
+                nextMilestone: {
+                  label: 'Offer Status',
+                  detail: 'Offer accepted — onboarding packet initiated',
+                  icon: 'verified',
+                  tone: 'tertiary',
+                },
+              };
+            }
+            return {
+              ...app,
+              status: 'archived',
+              stageBadge: 'Offer Declined',
+              nextMilestone: {
+                label: 'Offer Status',
+                detail: 'Offer declined by candidate',
+                icon: 'info',
+                tone: 'neutral',
+              },
+            };
+          })
+        );
+
+        if (decision === 'accepted') {
+          showToast(`Congratulations! Offer accepted at ${target.company}`, 'celebration');
+        } else {
+          showToast(`Offer from ${target.company} marked declined`, 'info');
+        }
+      } catch (err) {
+        const apiError = normalizeApiError(err);
+        showToast(apiError.message, 'error');
+        throw apiError;
+      }
     },
-    [offerSpotlight.company, offerSpotlight.id, showToast]
+    [authSession.isAuthenticated, authSession.userEmail, offerSpotlight, showToast]
   );
 
   const updateProfile = useCallback(
@@ -372,7 +581,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const uploadResume = useCallback(
-    async (file: File) => {
+    async (file: File): Promise<ResumeDocument | null> => {
       try {
         const newDoc = await resumeService.uploadResume(file);
         setProfile((prev) => ({
@@ -380,8 +589,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           resumes: [newDoc, ...prev.resumes],
         }));
         showToast(`Uploaded ${file.name}`, 'upload_file');
+        return newDoc;
       } catch (err) {
         showToast(normalizeApiError(err).message, 'error');
+        return null;
       }
     },
     [showToast]
@@ -534,6 +745,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!IS_MOCK_MODE) {
       setApplications([]);
       setSavedJobIds([]);
+      setProfile({ ...INITIAL_PROFILE, resumes: [] });
     }
     showToast('Signed out of session', 'logout');
   }, [showToast]);

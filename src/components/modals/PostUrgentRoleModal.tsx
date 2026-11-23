@@ -20,20 +20,25 @@ export function PostUrgentRoleModal({ open, onClose, onSubmit }: PostUrgentRoleM
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !company.trim()) return;
+    if (!title.trim() || !company.trim() || submitting) return;
     setSubmitting(true);
-    await onSubmit({
-      title: title.trim(),
-      company: company.trim(),
-      location: location.trim(),
-      salaryDisplay: salaryDisplay.trim(),
-      workplace,
-      sector,
-    });
-    setSubmitting(false);
-    setTitle('');
-    setCompany('');
-    onClose();
+    try {
+      await onSubmit({
+        title: title.trim(),
+        company: company.trim(),
+        location: location.trim(),
+        salaryDisplay: salaryDisplay.trim(),
+        workplace,
+        sector,
+      });
+      setTitle('');
+      setCompany('');
+      onClose();
+    } catch {
+      // Error toast is handled by AppContext
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

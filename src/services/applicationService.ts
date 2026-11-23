@@ -102,11 +102,13 @@ export const applicationService = {
   ): Promise<JobApplication> {
     return withMockFallback(
       async () => {
-        const numericJobId = Number(job.id);
-        const numericResumeId = Number(formData.resumeId);
+        const rawJobId = String(job.id).trim();
+        const numericJobId = /^\d+$/.test(rawJobId) ? Number(rawJobId) : rawJobId;
+        const rawResumeId = String(formData.resumeId || '').trim();
+        const numericResumeId = /^\d+$/.test(rawResumeId) ? Number(rawResumeId) : null;
         const res = await apiClient.post<SpringApplicationDto>('/applications', {
-          jobId: Number.isNaN(numericJobId) ? job.id : numericJobId,
-          resumeId: !Number.isNaN(numericResumeId) && numericResumeId > 0 ? numericResumeId : null,
+          jobId: numericJobId,
+          resumeId: numericResumeId && numericResumeId > 0 ? numericResumeId : null,
           coverLetter: formData.shortPitch,
           experienceYears: formData.experienceYears,
           workAuthorized: formData.workAuthorized,
@@ -140,10 +142,11 @@ export const applicationService = {
 
   async withdrawApplication(applicationId: string): Promise<void> {
     return withMockFallback(
-      () =>
-        apiClient.patch<void>(
+      async () => {
+        await apiClient.patch<unknown>(
           `/applications/${encodeURIComponent(applicationId)}/withdraw`
-        ),
+        );
+      },
       () => undefined
     );
   },
@@ -151,14 +154,14 @@ export const applicationService = {
   async respondToOffer(
     offerId: string,
     decision: 'accepted' | 'declined'
-  ): Promise<{ offerId: string; status: 'accepted' | 'declined' }> {
+  ): Promise<{ offerId: string; status: 'accepted' | 'declined'; applicationId?: number | null }> {
     return withMockFallback(
       () =>
-        apiClient.patch<{ offerId: string; status: 'accepted' | 'declined' }>(
+        apiClient.patch<{ offerId: string; status: 'accepted' | 'declined'; applicationId?: number | null }>(
           `/applications/offers/${encodeURIComponent(offerId)}/decision`,
           { decision }
         ),
-      () => ({ offerId, status: decision })
+      () => ({ offerId, status: decision, applicationId: null })
     );
   },
 };

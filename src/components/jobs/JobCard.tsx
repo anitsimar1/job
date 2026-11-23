@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { JobPosting } from '../../types';
 import { SafeImage } from '../common/SafeImage';
 import { useApp } from '../../context/AppContext';
@@ -10,6 +10,7 @@ interface JobCardProps {
 }
 
 export function JobCard({ job, variant = 'search' }: JobCardProps) {
+  const location = useLocation();
   const navigate = useNavigate();
   const { savedJobIds, appliedJobIds, toggleSaveJob, quickApplyJob } = useApp();
   const [applying, setApplying] = useState(false);
@@ -21,9 +22,14 @@ export function JobCard({ job, variant = 'search' }: JobCardProps) {
     e.stopPropagation();
     if (isApplied || applying) return;
     setApplying(true);
-    await new Promise((r) => setTimeout(r, 500));
-    await quickApplyJob(job);
-    setApplying(false);
+    try {
+      const result = await quickApplyJob(job);
+      if (result === 'auth_required') {
+        navigate('/auth', { state: { from: location.pathname } });
+      }
+    } finally {
+      setApplying(false);
+    }
   };
 
   if (variant === 'home') {

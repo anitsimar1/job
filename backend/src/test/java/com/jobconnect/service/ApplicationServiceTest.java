@@ -2,6 +2,7 @@ package com.jobconnect.service;
 
 import com.jobconnect.dto.ApplicationDto;
 import com.jobconnect.dto.ApplicationRequest;
+import com.jobconnect.dto.OfferDecisionResponse;
 import com.jobconnect.entity.*;
 import com.jobconnect.exception.DuplicateResourceException;
 import com.jobconnect.repository.ApplicationRepository;
@@ -87,6 +88,28 @@ class ApplicationServiceTest {
     }
 
     @Test
+    void applyForJob_allowsApplyingWithoutResume() {
+        ApplicationRequest req = new ApplicationRequest(
+                55L, null, "Applying directly with profile.", "5-7 yrs", true, false, "2 Weeks"
+        );
+
+        when(userRepository.findByEmailIgnoreCase("elena@techmail.io")).thenReturn(Optional.of(seeker));
+        when(jobRepository.findById(55L)).thenReturn(Optional.of(openJob));
+        when(applicationRepository.existsByUserIdAndJobId(10L, 55L)).thenReturn(false);
+        when(applicationRepository.save(any(Application.class))).thenAnswer(inv -> {
+            Application a = inv.getArgument(0);
+            a.setId(101L);
+            return a;
+        });
+
+        ApplicationDto result = applicationService.applyForJob(req, "elena@techmail.io");
+
+        assertThat(result.id()).isEqualTo(101L);
+        assertThat(result.resumeId()).isNull();
+        verify(resumeRepository, never()).findByIdAndUserId(any(), any());
+    }
+
+    @Test
     void applyForJob_preventsDuplicateApplicationForSameJob() {
         ApplicationRequest req = new ApplicationRequest(55L, null, "Duplicate attempt", null, true, false, null);
 
@@ -116,5 +139,51 @@ class ApplicationServiceTest {
 
         ApplicationDto ownResult = applicationService.getApplicationById(88L, "elena@techmail.io", false);
         assertThat(ownResult.id()).isEqualTo(88L);
+    }
+
+    @Test
+    void withdrawApplication_marksOwnedApplicationRejected() {
+        Application app = new Application();
+        app.setId(88L);
+        app.setUser(seeker);
+        app.setJob(openJob);
+        app.setStatus(ApplicationStatus.APPLIED);
+
+        when(applicationRepository.findById(88L)).thenReturn(Optional.of(app));
+        when(applicationRepository.save(any(Application.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        assertThatThrownBy(() ->
+                applicationService.withdrawApplication(88L, "other.user@techmail.io"))
+                .isInstanceOf(AccessDeniedException.class);
+
+        ApplicationDto withdrawn = applicationService.withdrawApplication(88L, "elena@techmail.io");
+        assertThat(withdrawn.status()).isEqualTo(ApplicationStatus.REJECTED);
+    }
+
+    @Test
+    void respondToOffer_updatesNumericApplicationAndHandlesSpotlightOffer() {
+        Application app = new Application();
+        app.setId(42L);
+        app.setUser(seeker);
+        app.setJob(openJob);
+        app.setStatus(ApplicationStatus.HIRED);
+
+        when(userRepository.findByEmailIgnoreCase("elena@techmail.io")).thenReturn(Optional.of(seeker));
+        when(applicationRepository.findById(42L)).thenReturn(Optional.of(app));
+        when(applicationRepository.save(any(Application.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        OfferDecisionResponse accepted = applicationService.respondToOffer("42", "accepted", "elena@techmail.io");
+        assertThat(accepted.status()).isEqualTo("accepted");
+        assertThat(accepted.applicationId()).isEqualTo(42L);
+        assertThat(app.getStatus()).isEqualTo(ApplicationStatus.HIRED);
+
+        OfferDecisionResponse declined = applicationService.respondToOffer("42", "declined", "elena@techmail.io");
+        assertThat(declined.status()).isEqualTo("declined");
+        assertThat(app.getStatus()).isEqualTo(ApplicationStatus.REJECTED);
+
+        OfferDecisionResponse spotlight = applicationService.respondToOffer("offer-vercel-lead", "accepted", "elena@techmail.io");
+        assertThat(spotlight.offerId()).isEqualTo("offer-vercel-lead");
+        assertThat(spotlight.status()).isEqualTo("accepted");
+        assertThat(spotlight.applicationId()).isNull();
     }
 }

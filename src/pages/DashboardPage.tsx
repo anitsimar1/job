@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { MobileTabShell } from '../components/layout/MobileTabShell';
 import { SafeImage } from '../components/common/SafeImage';
 import { ExecutiveReportModal } from '../components/modals/ExecutiveReportModal';
@@ -7,9 +7,18 @@ import { MARCUS_AVANCE_AVATAR } from '../data/mockData';
 import { useApp } from '../context/AppContext';
 
 export function DashboardPage() {
+  const location = useLocation();
   const navigate = useNavigate();
-  const { jobs, applications, savedJobIds, profile, toggleSaveJob, quickApplyJob, showToast } =
-    useApp();
+  const {
+    jobs,
+    applications,
+    savedJobIds,
+    appliedJobIds,
+    profile,
+    toggleSaveJob,
+    quickApplyJob,
+    showToast,
+  } = useApp();
 
   const [referralState, setReferralState] = useState<'idle' | 'sending' | 'sent'>('idle');
   const [prepNotesOpen, setPrepNotesOpen] = useState(false);
@@ -448,6 +457,7 @@ export function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
               {curatedJobs.map((job) => {
                 const isSaved = savedJobIds.includes(job.id);
+                const isApplied = appliedJobIds.includes(job.id);
                 return (
                   <div
                     key={job.id}
@@ -507,12 +517,24 @@ export function DashboardPage() {
 
                     <div className="flex items-center gap-space-xs pt-space-xs">
                       <button
-                        className="flex-1 h-11 px-space-md rounded-lg bg-primary text-on-primary font-label-md text-label-md hover:bg-secondary transition-all flex items-center justify-center gap-1"
-                        onClick={() => quickApplyJob(job)}
+                        className={`flex-1 h-11 px-space-md rounded-lg font-label-md text-label-md transition-all flex items-center justify-center gap-1 ${
+                          isApplied
+                            ? 'bg-tertiary-container text-tertiary-fixed'
+                            : 'bg-primary text-on-primary hover:bg-secondary'
+                        }`}
+                        disabled={isApplied}
+                        onClick={async () => {
+                          const result = await quickApplyJob(job);
+                          if (result === 'auth_required') {
+                            navigate('/auth', { state: { from: location.pathname } });
+                          }
+                        }}
                         type="button"
                       >
-                        <span>Quick Apply</span>
-                        <span className="material-symbols-outlined text-[16px]">send</span>
+                        <span>{isApplied ? 'Applied' : 'Quick Apply'}</span>
+                        <span className="material-symbols-outlined text-[16px]">
+                          {isApplied ? 'check_circle' : 'send'}
+                        </span>
                       </button>
                       <button
                         className="h-11 px-space-sm rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors"

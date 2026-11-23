@@ -1,29 +1,34 @@
-import React, { useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { StackShell } from '../components/layout/StackShell';
 import { SafeImage } from '../components/common/SafeImage';
 import { useApp } from '../context/AppContext';
-import { ApplyFormData } from '../types';
+import { IS_MOCK_MODE } from '../services';
+import { jobService } from '../services/jobService';
+import { ApplyFormData, JobPosting } from '../types';
 
 export function ApplyJobPage() {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
-  const { jobs, profile, submitApplication, uploadResume, showToast } = useApp();
-  const job = jobs.find((j) => j.id === id) || jobs[0];
+  const { jobs, profile, authSession, submitApplication, uploadResume, showToast } = useApp();
 
   const defaultResume = profile.resumes.find((r) => r.isDefault) || profile.resumes[0];
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dirtyPersonalRef = useRef(false);
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [submitting, setSubmitting] = useState(false);
   const [editingAutoFill, setEditingAutoFill] = useState(false);
+  const [fetchedJob, setFetchedJob] = useState<JobPosting | undefined>(undefined);
+  const [loadingJob, setLoadingJob] = useState(false);
 
   const [formData, setFormData] = useState<ApplyFormData>({
     fullName: profile.fullName,
     email: profile.email,
     phone: profile.phone,
-    location: 'San Francisco, CA (Remote)',
-    resumeId: defaultResume?.id || 'res-1',
+    location: profile.location || '',
+    resumeId: defaultResume?.id || '',
     githubUrl: profile.links.github,
     linkedinUrl: profile.links.linkedin,
     experienceYears: '5-7 yrs',
@@ -34,16 +39,109 @@ export function ApplyJobPage() {
     consentAgreed: true,
   });
 
+  const jobFromContext = id ? jobs.find((j) => j.id === id) : jobs[0];
+
+  useEffect(() => {
+    if (!id || jobFromContext) {
+      setLoadingJob(false);
+      return;
+    }
+    let active = true;
+    setLoadingJob(true);
+    jobService
+      .getJobById(id, jobs)
+      .then((res) => {
+        if (active) setFetchedJob(res);
+      })
+      .catch(() => {
+        if (active) setFetchedJob(undefined);
+      })
+      .finally(() => {
+        if (active) setLoadingJob(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [id, jobFromContext, jobs]);
+
+  useEffect(() => {
+    const nextDefault = profile.resumes.find((r) => r.isDefault) || profile.resumes[0];
+    setFormData((prev) => {
+      const hasValidResume =
+        Boolean(prev.resumeId) && profile.resumes.some((r) => r.id === prev.resumeId);
+      const nextResumeId = hasValidResume ? prev.resumeId : nextDefault?.id || '';
+      if (dirtyPersonalRef.current) {
+        return prev.resumeId === nextResumeId ? prev : { ...prev, resumeId: nextResumeId };
+      }
+      return {
+        ...prev,
+        fullName: profile.fullName || prev.fullName,
+        email: profile.email || prev.email,
+        phone: profile.phone || prev.phone,
+        location: profile.location || prev.location,
+        githubUrl: profile.links.github || prev.githubUrl,
+        linkedinUrl: profile.links.linkedin || prev.linkedinUrl,
+        resumeId: nextResumeId,
+      };
+    });
+  }, [profile]);
+
+  const job = jobFromContext || (fetchedJob && (!id || fetchedJob.id === id) ? fetchedJob : undefined);
+
+  if (loadingJob && !job) {
+    return (
+      <StackShell backTo="/jobs" title="Apply For Job">
+        <div className="px-gutter-sm py-16 flex flex-col items-center justify-center gap-3 text-center">
+          <span className="material-symbols-outlined text-[32px] text-secondary animate-spin">
+            progress_activity
+          </span>
+          <p className="font-body-md text-on-surface-variant">Loading role details...</p>
+        </div>
+      </StackShell>
+    );
+  }
+
+  if (!job) {
+    return (
+      <StackShell backTo="/jobs" title="Apply For Job">
+        <div className="px-gutter-sm py-16 flex flex-col items-center justify-center gap-4 text-center">
+          <div className="w-14 h-14 rounded-full bg-surface-container-high flex items-center justify-center text-secondary">
+            <span className="material-symbols-outlined text-[28px]">work_off</span>
+          </div>
+          <h2 className="font-headline-sm font-bold text-on-surface">Job listing not found</h2>
+          <p className="font-body-sm text-on-surface-variant max-w-xs">
+            This role could not be found or is no longer open for applications.
+          </p>
+          <Link
+            className="px-5 py-2.5 rounded-xl bg-primary text-on-primary font-label-md font-semibold"
+            to="/jobs"
+          >
+            Browse Open Roles
+          </Link>
+        </div>
+      </StackShell>
+    );
+  }
+
   const selectedResume =
     profile.resumes.find((r) => r.id === formData.resumeId) || profile.resumes[0];
 
   const handleResumeSwap = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    await uploadResume(file);
+    const uploaded = await uploadResume(file);
+    if (uploaded) {
+      setFormData((p) => ({ ...p, resumeId: uploaded.id }));
+    }
+    e.target.value = '';
   };
 
   const handleReview = () => {
+    if (!IS_MOCK_MODE && !authSession.isAuthenticated) {
+      showToast('Please sign in to submit your application', 'lock');
+      navigate('/auth', { state: { from: location.pathname } });
+      return;
+    }
     if (!formData.fullName.trim() || !formData.email.trim()) {
       showToast('Please complete your name and email', 'error');
       return;
@@ -57,9 +155,13 @@ export function ApplyJobPage() {
   };
 
   const handleFinalSubmit = async () => {
+    if (!IS_MOCK_MODE && !authSession.isAuthenticated) {
+      showToast('Please sign in to submit your application', 'lock');
+      navigate('/auth', { state: { from: location.pathname } });
+      return;
+    }
     setSubmitting(true);
     try {
-      await new Promise((r) => setTimeout(r, 600));
       await submitApplication(job, formData);
       setStep(3);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -144,6 +246,26 @@ export function ApplyJobPage() {
 
           {step === 1 && (
             <>
+              {!IS_MOCK_MODE && !authSession.isAuthenticated && (
+                <div className="bg-secondary-container/25 border border-secondary/25 p-space-sm rounded-xl flex items-center justify-between gap-space-sm">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="material-symbols-outlined text-[20px] text-secondary shrink-0">
+                      lock
+                    </span>
+                    <p className="font-body-sm text-on-surface">
+                      Sign in with your account to submit this application.
+                    </p>
+                  </div>
+                  <button
+                    className="shrink-0 px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-md font-semibold"
+                    onClick={() => navigate('/auth', { state: { from: location.pathname } })}
+                    type="button"
+                  >
+                    Sign In
+                  </button>
+                </div>
+              )}
+
               {/* Fast Auto-Fill Delight Banner */}
               <div className="bg-surface-container p-space-sm rounded-xl flex items-center justify-between gap-space-sm shadow-xs transition-all">
                 <div className="flex items-center gap-space-xs min-w-0">
@@ -153,7 +275,9 @@ export function ApplyJobPage() {
                   <div className="truncate">
                     <p className="font-label-sm text-label-sm text-on-surface truncate">
                       Auto-filled from{' '}
-                      <span className="font-semibold text-secondary">{profile.fullName}</span>
+                      <span className="font-semibold text-secondary">
+                        {formData.fullName || profile.fullName}
+                      </span>
                     </p>
                     <p className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
                       <span className="inline-block w-1.5 h-1.5 rounded-full bg-tertiary-fixed-dim" />
@@ -208,9 +332,10 @@ export function ApplyJobPage() {
                         <input
                           className="w-full h-11 px-3 pl-10 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-surface-container-lowest transition-all"
                           id="fullName"
-                          onChange={(e) =>
-                            setFormData((p) => ({ ...p, fullName: e.target.value }))
-                          }
+                          onChange={(e) => {
+                            dirtyPersonalRef.current = true;
+                            setFormData((p) => ({ ...p, fullName: e.target.value }));
+                          }}
                           type="text"
                           value={formData.fullName}
                         />
@@ -231,7 +356,10 @@ export function ApplyJobPage() {
                         <input
                           className="w-full h-11 px-3 pl-10 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-surface-container-lowest transition-all"
                           id="email"
-                          onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))}
+                          onChange={(e) => {
+                            dirtyPersonalRef.current = true;
+                            setFormData((p) => ({ ...p, email: e.target.value }));
+                          }}
                           type="email"
                           value={formData.email}
                         />
@@ -253,7 +381,10 @@ export function ApplyJobPage() {
                           <input
                             className="w-full h-11 px-3 pl-10 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-surface-container-lowest transition-all"
                             id="phone"
-                            onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))}
+                            onChange={(e) => {
+                              dirtyPersonalRef.current = true;
+                              setFormData((p) => ({ ...p, phone: e.target.value }));
+                            }}
                             type="tel"
                             value={formData.phone}
                           />
@@ -273,9 +404,10 @@ export function ApplyJobPage() {
                           <input
                             className="w-full h-11 px-3 pl-10 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-surface-container-lowest transition-all"
                             id="location"
-                            onChange={(e) =>
-                              setFormData((p) => ({ ...p, location: e.target.value }))
-                            }
+                            onChange={(e) => {
+                              dirtyPersonalRef.current = true;
+                              setFormData((p) => ({ ...p, location: e.target.value }));
+                            }}
                             type="text"
                             value={formData.location}
                           />
@@ -310,40 +442,58 @@ export function ApplyJobPage() {
                         <span className="material-symbols-outlined text-[22px]">description</span>
                       </div>
                       <div className="flex flex-col min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-label-md text-label-md font-semibold text-on-surface truncate">
-                            {selectedResume?.fileName}
-                          </span>
-                          <span
-                            className="material-symbols-outlined text-[16px] text-tertiary-container"
-                            style={{ fontVariationSettings: "'FILL' 1" }}
-                          >
-                            check_circle
-                          </span>
-                        </div>
-                        <span className="font-label-sm text-label-sm text-on-surface-variant">
-                          {selectedResume?.fileSize} • {selectedResume?.uploadedAt}
-                        </span>
+                        {selectedResume ? (
+                          <>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-label-md text-label-md font-semibold text-on-surface truncate">
+                                {selectedResume.fileName}
+                              </span>
+                              <span
+                                className="material-symbols-outlined text-[16px] text-tertiary-container"
+                                style={{ fontVariationSettings: "'FILL' 1" }}
+                              >
+                                check_circle
+                              </span>
+                            </div>
+                            <span className="font-label-sm text-label-sm text-on-surface-variant">
+                              {selectedResume.fileSize} • {selectedResume.uploadedAt}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-label-md text-label-md font-semibold text-on-surface truncate">
+                              No resume attached yet (Optional)
+                            </span>
+                            <span className="font-label-sm text-label-sm text-on-surface-variant">
+                              Upload a PDF/DOCX or apply directly with your profile
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
+                      {selectedResume && (
+                        <button
+                          aria-label="View Resume"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface hover:bg-surface-container active:scale-95 transition-all"
+                          onClick={() =>
+                            showToast(`Selected ${selectedResume.fileName}`, 'visibility')
+                          }
+                          type="button"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">visibility</span>
+                        </button>
+                      )}
                       <button
-                        aria-label="View Resume"
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface hover:bg-surface-container active:scale-95 transition-all"
-                        onClick={() =>
-                          showToast(`Previewing ${selectedResume?.fileName}`, 'visibility')
-                        }
-                        type="button"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">visibility</span>
-                      </button>
-                      <button
-                        aria-label="Replace Resume"
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-secondary hover:bg-surface-container active:scale-95 transition-all"
+                        aria-label={selectedResume ? 'Replace Resume' : 'Upload Resume'}
+                        className="px-2.5 h-8 rounded-lg flex items-center gap-1 justify-center text-secondary hover:bg-surface-container active:scale-95 transition-all font-label-sm font-semibold"
                         onClick={() => fileInputRef.current?.click()}
                         type="button"
                       >
-                        <span className="material-symbols-outlined text-[18px]">swap_horiz</span>
+                        <span className="material-symbols-outlined text-[18px]">
+                          {selectedResume ? 'swap_horiz' : 'upload_file'}
+                        </span>
+                        {!selectedResume && <span>Upload</span>}
                       </button>
                       <input
                         accept=".pdf,.doc,.docx"
@@ -367,9 +517,10 @@ export function ApplyJobPage() {
                         <input
                           className="w-full h-11 px-3 pl-10 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-surface-container-lowest transition-all"
                           id="githubLink"
-                          onChange={(e) =>
-                            setFormData((p) => ({ ...p, githubUrl: e.target.value }))
-                          }
+                          onChange={(e) => {
+                            dirtyPersonalRef.current = true;
+                            setFormData((p) => ({ ...p, githubUrl: e.target.value }));
+                          }}
                           type="url"
                           value={formData.githubUrl}
                         />
@@ -390,9 +541,10 @@ export function ApplyJobPage() {
                         <input
                           className="w-full h-11 px-3 pl-10 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-surface-container-lowest transition-all"
                           id="linkedinLink"
-                          onChange={(e) =>
-                            setFormData((p) => ({ ...p, linkedinUrl: e.target.value }))
-                          }
+                          onChange={(e) => {
+                            dirtyPersonalRef.current = true;
+                            setFormData((p) => ({ ...p, linkedinUrl: e.target.value }));
+                          }}
                           type="url"
                           value={formData.linkedinUrl}
                         />
@@ -604,7 +756,7 @@ export function ApplyJobPage() {
                 <div className="flex justify-between">
                   <span className="text-on-surface-variant">Resume</span>
                   <span className="font-semibold text-primary truncate max-w-[200px]">
-                    {selectedResume?.fileName}
+                    {selectedResume?.fileName || 'Profile Application'}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -640,7 +792,10 @@ export function ApplyJobPage() {
                   Application Sent to {job.company}!
                 </h3>
                 <p className="font-body-sm text-on-surface-variant mt-1 max-w-sm">
-                  Your packet with <span className="font-semibold">{selectedResume?.fileName}</span>{' '}
+                  Your packet with{' '}
+                  <span className="font-semibold">
+                    {selectedResume?.fileName || 'your JobConnect profile'}
+                  </span>{' '}
                   has been added to your active pipeline.
                 </p>
               </div>

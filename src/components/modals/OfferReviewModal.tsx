@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { OfferSpotlight } from '../../types';
 import { SafeImage } from '../common/SafeImage';
 
@@ -5,8 +6,8 @@ interface OfferReviewModalProps {
   open: boolean;
   offer: OfferSpotlight;
   onClose: () => void;
-  onAccept: () => void;
-  onDecline: () => void;
+  onAccept: () => Promise<void> | void;
+  onDecline: () => Promise<void> | void;
 }
 
 export function OfferReviewModal({
@@ -16,13 +17,34 @@ export function OfferReviewModal({
   onAccept,
   onDecline,
 }: OfferReviewModalProps) {
+  const [submittingDecision, setSubmittingDecision] = useState<'accepted' | 'declined' | null>(
+    null
+  );
+
   if (!open) return null;
+
+  const handleDecision = async (decision: 'accepted' | 'declined') => {
+    if (submittingDecision) return;
+    setSubmittingDecision(decision);
+    try {
+      if (decision === 'accepted') {
+        await onAccept();
+      } else {
+        await onDecline();
+      }
+      onClose();
+    } catch {
+      // Error toast is handled by AppContext; keep modal open to retry
+    } finally {
+      setSubmittingDecision(null);
+    }
+  };
 
   return (
     <div
       className="fixed inset-0 z-[70] bg-on-surface/50 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !submittingDecision) onClose();
       }}
     >
       <div className="bg-surface-container-lowest rounded-2xl max-w-md w-full p-5 shadow-2xl flex flex-col gap-4">
@@ -47,7 +69,8 @@ export function OfferReviewModal({
           </div>
           <button
             aria-label="Close offer review"
-            className="w-9 h-9 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant"
+            className="w-9 h-9 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant disabled:opacity-50"
+            disabled={submittingDecision !== null}
             onClick={onClose}
             type="button"
           >
@@ -86,25 +109,23 @@ export function OfferReviewModal({
         ) : (
           <div className="flex items-center gap-2.5 pt-1">
             <button
-              className="flex-1 py-3 rounded-xl bg-surface-container-low hover:bg-error-container text-error font-label-md font-semibold transition-colors"
-              onClick={() => {
-                onDecline();
-                onClose();
-              }}
+              className="flex-1 py-3 rounded-xl bg-surface-container-low hover:bg-error-container text-error font-label-md font-semibold transition-colors disabled:opacity-60"
+              disabled={submittingDecision !== null}
+              onClick={() => handleDecision('declined')}
               type="button"
             >
-              Decline Offer
+              {submittingDecision === 'declined' ? 'Declining...' : 'Decline Offer'}
             </button>
             <button
-              className="flex-[1.5] py-3 rounded-xl bg-tertiary-container hover:bg-tertiary text-tertiary-fixed font-label-lg font-bold shadow-md transition-colors flex items-center justify-center gap-1.5"
-              onClick={() => {
-                onAccept();
-                onClose();
-              }}
+              className="flex-[1.5] py-3 rounded-xl bg-tertiary-container hover:bg-tertiary text-tertiary-fixed font-label-lg font-bold shadow-md transition-colors flex items-center justify-center gap-1.5 disabled:opacity-60"
+              disabled={submittingDecision !== null}
+              onClick={() => handleDecision('accepted')}
               type="button"
             >
-              <span className="material-symbols-outlined text-[18px]">check_circle</span>
-              <span>Accept Offer</span>
+              <span className="material-symbols-outlined text-[18px]">
+                {submittingDecision === 'accepted' ? 'progress_activity' : 'check_circle'}
+              </span>
+              <span>{submittingDecision === 'accepted' ? 'Accepting...' : 'Accept Offer'}</span>
             </button>
           </div>
         )}

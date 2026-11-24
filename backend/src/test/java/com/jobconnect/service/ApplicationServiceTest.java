@@ -12,6 +12,7 @@ import com.jobconnect.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -20,6 +21,7 @@ import org.springframework.security.access.AccessDeniedException;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -33,6 +35,7 @@ class ApplicationServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private JobRepository jobRepository;
     @Mock private ResumeRepository resumeRepository;
+    @Mock private EmailNotificationService emailNotificationService;
     @Spy private DtoMapper dtoMapper = new DtoMapper();
 
     @InjectMocks
@@ -219,5 +222,94 @@ class ApplicationServiceTest {
         assertThat(spotlight.offerId()).isEqualTo("offer-vercel-lead");
         assertThat(spotlight.status()).isEqualTo("accepted");
         assertThat(spotlight.applicationId()).isNull();
+    }
+
+    @Test
+    void applyForJob_blocksEmployerOnlyAccounts() {
+        User employer = new User();
+        employer.setId(88L);
+        employer.setEmail("poster@acme.io");
+        employer.setRoles(Set.of(new Role(RoleName.ROLE_EMPLOYER)));
+
+        ApplicationRequest req = new ApplicationRequest(55L, null, "Cannot apply", null, true, false, null);
+        when(userRepository.findByEmailIgnoreCase("poster@acme.io")).thenReturn(Optional.of(employer));
+
+        assertThatThrownBy(() -> applicationService.applyForJob(req, "poster@acme.io"))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessageContaining("cannot apply for jobs");
+        verify(applicationRepository, never()).save(any());
+    }
+
+    @Test
+    void getApplicationsForJobAndUpdateStatus_enforceJobPosterOwnership() {
+        User owner = new User();
+        owner.setId(20L);
+        owner.setEmail("poster@acme.io");
+        openJob.setCreatedBy(owner);
+
+        Application app = new Application();
+        app.setId(70L);
+        app.setUser(seeker);
+        app.setJob(openJob);
+        app.setResume(resume);
+        app.setStatus(ApplicationStatus.APPLIED);
+
+        when(jobRepository.findById(55L)).thenReturn(Optional.of(openJob));
+        when(applicationRepository.findByJobIdOrderByAppliedAtDesc(55L)).thenReturn(List.of(app));
+        when(applicationRepository.findById(70L)).thenReturn(Optional.of(app));
+        when(applicationRepository.save(any(Application.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        List<ApplicationDto> applicants = applicationService.getApplicationsForJob(55L, "poster@acme.io", false);
+        assertThat(applicants).hasSize(1);
+        assertThat(applicants.get(0).resumeFileName()).isEqualTo("Elena_Resume.pdf");
+
+        assertThatThrownBy(() -> applicationService.getApplicationsForJob(55L, "stranger@other.io", false))
+                .isInstanceOf(AccessDeniedException.class);
+
+        ApplicationDto updated = applicationService.updateApplicationStatusForPoster(
+                70L, ApplicationStatus.SHORTLISTED, "poster@acme.io", false
+        );
+        assertThat(updated.status()).isEqualTo(ApplicationStatus.SHORTLISTED);
+
+        assertThatThrownBy(() -> applicationService.updateApplicationStatusForPoster(
+                70L, ApplicationStatus.REJECTED, "stranger@other.io", false))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void applyForJob_dispatchesCandidateAndJobPosterEmailNotifications() {
+        User poster = new User();
+        poster.setId(20L);
+        poster.setFullName("Marcus Vance");
+        poster.setEmail("poster@apexcloud.io");
+        openJob.setCreatedBy(poster);
+
+        ApplicationRequest req = new ApplicationRequest(
+                55L, 7L, "Excited to contribute.", "5-7 yrs", true, false, "2 Weeks"
+        );
+
+        when(userRepository.findByEmailIgnoreCase("elena@techmail.io")).thenReturn(Optional.of(seeker));
+        when(jobRepository.findById(55L)).thenReturn(Optional.of(openJob));
+        when(applicationRepository.existsByUserIdAndJobId(10L, 55L)).thenReturn(false);
+        when(resumeRepository.findByIdAndUserId(7L, 10L)).thenReturn(Optional.of(resume));
+        when(applicationRepository.save(any(Application.class))).thenAnswer(inv -> {
+            Application a = inv.getArgument(0);
+            a.setId(123L);
+            return a;
+        });
+
+        applicationService.applyForJob(req, "elena@techmail.io");
+
+        ArgumentCaptor<EmailNotificationService.ApplicationNotificationPayload> captor =
+                ArgumentCaptor.forClass(EmailNotificationService.ApplicationNotificationPayload.class);
+        verify(emailNotificationService, times(1)).sendApplicationEmails(captor.capture());
+
+        EmailNotificationService.ApplicationNotificationPayload payload = captor.getValue();
+        assertThat(payload.applicationId()).isEqualTo(123L);
+        assertThat(payload.candidateEmail()).isEqualTo("elena@techmail.io");
+        assertThat(payload.posterEmail()).isEqualTo("poster@apexcloud.io");
+        assertThat(payload.posterName()).isEqualTo("Marcus Vance");
+        assertThat(payload.jobTitle()).isEqualTo("Senior Frontend Engineer");
+        assertThat(payload.resumeFileName()).isEqualTo("Elena_Resume.pdf");
     }
 }

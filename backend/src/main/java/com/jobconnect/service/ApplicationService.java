@@ -11,11 +11,14 @@ import com.jobconnect.repository.ApplicationRepository;
 import com.jobconnect.repository.JobRepository;
 import com.jobconnect.repository.ResumeRepository;
 import com.jobconnect.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 import java.util.Locale;
@@ -33,6 +36,7 @@ public class ApplicationService {
     private final JobRepository jobRepository;
     private final ResumeRepository resumeRepository;
     private final DtoMapper dtoMapper;
+    private final EmailNotificationService emailNotificationService;
 
     public ApplicationService(
             ApplicationRepository applicationRepository,
@@ -41,17 +45,38 @@ public class ApplicationService {
             ResumeRepository resumeRepository,
             DtoMapper dtoMapper
     ) {
+        this(applicationRepository, userRepository, jobRepository, resumeRepository, dtoMapper, null);
+    }
+
+    @Autowired
+    public ApplicationService(
+            ApplicationRepository applicationRepository,
+            UserRepository userRepository,
+            JobRepository jobRepository,
+            ResumeRepository resumeRepository,
+            DtoMapper dtoMapper,
+            EmailNotificationService emailNotificationService
+    ) {
         this.applicationRepository = applicationRepository;
         this.userRepository = userRepository;
         this.jobRepository = jobRepository;
         this.resumeRepository = resumeRepository;
         this.dtoMapper = dtoMapper;
+        this.emailNotificationService = emailNotificationService;
     }
 
     @Transactional
     public ApplicationDto applyForJob(ApplicationRequest request, String userEmail) {
         User user = userRepository.findByEmailIgnoreCase(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        boolean isEmployerOnly = user.getRoles().stream()
+                .anyMatch(r -> r.getName() == RoleName.ROLE_EMPLOYER)
+                && user.getRoles().stream()
+                        .noneMatch(r -> r.getName() == RoleName.ROLE_JOB_SEEKER || r.getName() == RoleName.ROLE_ADMIN);
+        if (isEmployerOnly) {
+            throw new AccessDeniedException("Job poster accounts cannot apply for jobs");
+        }
 
         Job job = jobRepository.findById(request.jobId())
                 .orElseThrow(() -> new ResourceNotFoundException("Job not found with id: " + request.jobId()));
@@ -98,7 +123,45 @@ public class ApplicationService {
         job.setApplicantsCount((job.getApplicantsCount() != null ? job.getApplicantsCount() : 0) + 1);
         jobRepository.save(job);
 
+        dispatchApplicationEmails(saved, user, job, resume);
+
         return dtoMapper.toApplicationDto(saved);
+    }
+
+    private void dispatchApplicationEmails(Application saved, User candidate, Job job, Resume resume) {
+        if (emailNotificationService == null) {
+            return;
+        }
+        User poster = job.getCreatedBy();
+        EmailNotificationService.ApplicationNotificationPayload payload =
+                new EmailNotificationService.ApplicationNotificationPayload(
+                        saved.getId(),
+                        candidate.getFullName(),
+                        candidate.getEmail(),
+                        candidate.getPhone(),
+                        job.getId(),
+                        job.getTitle(),
+                        job.getCompany(),
+                        job.getLocation(),
+                        job.getSalary(),
+                        poster != null ? poster.getFullName() : null,
+                        poster != null ? poster.getEmail() : null,
+                        resume != null ? resume.getFileName() : null,
+                        saved.getExperienceYears(),
+                        saved.getNoticePeriod(),
+                        saved.getCoverLetter()
+                );
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    emailNotificationService.sendApplicationEmails(payload);
+                }
+            });
+        } else {
+            emailNotificationService.sendApplicationEmails(payload);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -129,10 +192,44 @@ public class ApplicationService {
                 .map(dtoMapper::toApplicationDto);
     }
 
+    @Transactional(readOnly = true)
+    public List<ApplicationDto> getApplicationsForJob(Long jobId, String requesterEmail, boolean isAdmin) {
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new ResourceNotFoundException("Job not found with id: " + jobId));
+
+        if (!isAdmin && (job.getCreatedBy() == null || !job.getCreatedBy().getEmail().equalsIgnoreCase(requesterEmail))) {
+            throw new AccessDeniedException("You can only view applications for jobs you posted");
+        }
+
+        return applicationRepository.findByJobIdOrderByAppliedAtDesc(jobId)
+                .stream()
+                .map(dtoMapper::toApplicationDto)
+                .toList();
+    }
+
     @Transactional
     public ApplicationDto updateApplicationStatus(Long id, ApplicationStatus status) {
         Application app = applicationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Application not found with id: " + id));
+        app.setStatus(status);
+        return dtoMapper.toApplicationDto(applicationRepository.save(app));
+    }
+
+    @Transactional
+    public ApplicationDto updateApplicationStatusForPoster(
+            Long id,
+            ApplicationStatus status,
+            String requesterEmail,
+            boolean isAdmin
+    ) {
+        Application app = applicationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Application not found with id: " + id));
+
+        User createdBy = app.getJob().getCreatedBy();
+        if (!isAdmin && (createdBy == null || !createdBy.getEmail().equalsIgnoreCase(requesterEmail))) {
+            throw new AccessDeniedException("You can only update applications for jobs you posted");
+        }
+
         app.setStatus(status);
         return dtoMapper.toApplicationDto(applicationRepository.save(app));
     }

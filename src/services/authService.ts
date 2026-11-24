@@ -7,6 +7,7 @@ export interface LoginPayload {
   email: string;
   password: string;
   rememberMe: boolean;
+  accountType?: 'JOB_SEEKER' | 'EMPLOYER';
 }
 
 export interface RegisterPayload {
@@ -17,6 +18,9 @@ export interface RegisterPayload {
   phone: string;
   targetRoles?: string[];
   resumeFileName?: string;
+  rememberMe?: boolean;
+  accountType?: 'JOB_SEEKER' | 'EMPLOYER';
+  companyName?: string;
 }
 
 export interface SpringAuthResponse {
@@ -26,9 +30,11 @@ export interface SpringAuthResponse {
   accessToken?: string;
 }
 
-function normalizeRole(role?: string, roles?: string[]): 'JOB_SEEKER' | 'ADMIN' {
+function normalizeRole(role?: string, roles?: string[]): 'JOB_SEEKER' | 'EMPLOYER' | 'ADMIN' {
   if (role && role.toUpperCase().includes('ADMIN')) return 'ADMIN';
   if (Array.isArray(roles) && roles.some((r) => r.toUpperCase().includes('ADMIN'))) return 'ADMIN';
+  if (role && role.toUpperCase().includes('EMPLOYER')) return 'EMPLOYER';
+  if (Array.isArray(roles) && roles.some((r) => r.toUpperCase().includes('EMPLOYER'))) return 'EMPLOYER';
   return 'JOB_SEEKER';
 }
 
@@ -42,6 +48,8 @@ function toAuthSession(res: SpringAuthResponse, rememberMe: boolean): AuthSessio
     userId: String(res.user.id),
     userEmail: res.user.email,
     userName: res.user.fullName,
+    companyName: res.user.companyName,
+    profileImage: res.user.profileImage,
     role: normalizeRole(res.role, res.user.roles),
     authProvider: res.user.authProvider,
     emailVerified: res.user.emailVerified,
@@ -68,6 +76,7 @@ export const authService = {
             email: payload.email,
             password: payload.password,
             rememberMe: payload.rememberMe,
+            ...(payload.accountType ? { loginAs: payload.accountType } : {}),
           },
           { ...({ _skipAuthRefresh: true } as object) }
         );
@@ -78,13 +87,23 @@ export const authService = {
         isDemoMode: true,
         userEmail: payload.email || INITIAL_PROFILE.email,
         userName: INITIAL_PROFILE.fullName,
-        role: 'JOB_SEEKER' as const,
+        role: payload.accountType === 'EMPLOYER' ? ('EMPLOYER' as const) : ('JOB_SEEKER' as const),
         rememberMe: payload.rememberMe,
       })
     );
   },
 
   async register(payload: RegisterPayload): Promise<AuthSession> {
+    const rememberMe = payload.rememberMe ?? true;
+    const accountType = payload.accountType || 'JOB_SEEKER';
+    const companyName = payload.companyName?.trim();
+    const targetRolesStr =
+      accountType === 'JOB_SEEKER'
+        ? payload.targetRoles
+            ?.map((r) => r.trim())
+            .filter(Boolean)
+            .join(', ')
+        : undefined;
     return withMockFallback(
       async () => {
         const res = await apiClient.post<SpringAuthResponse>(
@@ -95,18 +114,23 @@ export const authService = {
             password: payload.password,
             confirmPassword: payload.confirmPassword,
             phone: payload.phone,
+            rememberMe,
+            accountType,
+            ...(companyName ? { companyName } : {}),
+            ...(targetRolesStr ? { targetRoles: targetRolesStr } : {}),
           },
           { ...({ _skipAuthRefresh: true } as object) }
         );
-        return toAuthSession(res, true);
+        return toAuthSession(res, rememberMe);
       },
       () => ({
         isAuthenticated: true,
         isDemoMode: true,
         userEmail: payload.email,
         userName: payload.fullName || 'Alexandra Vance',
-        role: 'JOB_SEEKER' as const,
-        rememberMe: true,
+        companyName,
+        role: accountType === 'EMPLOYER' ? ('EMPLOYER' as const) : ('JOB_SEEKER' as const),
+        rememberMe,
       })
     );
   },
@@ -129,6 +153,8 @@ export const authService = {
         userId: String(user.id),
         userEmail: user.email,
         userName: user.fullName,
+        companyName: user.companyName,
+        profileImage: user.profileImage,
         role: normalizeRole(undefined, user.roles),
         authProvider: user.authProvider,
         emailVerified: user.emailVerified,

@@ -2,7 +2,6 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BrandLogo } from '../common/BrandLogo';
 import { SafeImage } from '../common/SafeImage';
-import { USER_AVATAR_URL } from '../../data/mockData';
 import { useApp } from '../../context/AppContext';
 
 interface StackShellProps {
@@ -13,7 +12,10 @@ interface StackShellProps {
 
 export function StackShell({ title, backTo, children }: StackShellProps) {
   const navigate = useNavigate();
-  const { profile, showToast } = useApp();
+  const { profile, authSession, showToast } = useApp();
+  const userAvatarSrc = profile.avatar || authSession.profileImage || '';
+  const userDisplayName =
+    (authSession.isAuthenticated && authSession.userName) || profile.fullName || 'Candidate';
 
   const handleBack = () => {
     if (backTo) {
@@ -58,17 +60,31 @@ export function StackShell({ title, backTo, children }: StackShellProps) {
               <span className="material-symbols-outlined text-[24px]">notifications</span>
               <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-error ring-2 ring-surface" />
             </button>
-            <Link
-              aria-label="Profile"
-              className="w-11 h-11 flex items-center justify-center rounded-full hover:ring-2 hover:ring-secondary/30 transition-all"
-              to="/profile"
-            >
-              <SafeImage
-                alt={profile.fullName}
-                className="w-8 h-8 rounded-full object-cover"
-                src={USER_AVATAR_URL}
-              />
-            </Link>
+            {authSession.isAuthenticated ? (
+              <Link
+                aria-label="Profile"
+                className="w-11 h-11 flex items-center justify-center rounded-full hover:ring-2 hover:ring-secondary/30 transition-all"
+                to="/profile"
+              >
+                <SafeImage
+                  alt={userDisplayName}
+                  className="w-8 h-8 rounded-full object-cover ring-1 ring-outline-variant/40"
+                  fallbackIcon="person"
+                  src={userAvatarSrc}
+                />
+              </Link>
+            ) : (
+              <Link
+                aria-label="Sign In"
+                className="h-9 px-3 rounded-lg bg-primary text-on-primary hover:bg-secondary font-label-md text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all active:scale-95 shrink-0"
+                to="/auth"
+              >
+                <span aria-hidden="true" className="material-symbols-outlined text-[16px]">
+                  login
+                </span>
+                <span>Sign In</span>
+              </Link>
+            )}
           </div>
         </div>
       </header>

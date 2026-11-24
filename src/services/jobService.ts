@@ -1,7 +1,7 @@
 import { INITIAL_JOBS, MARCUS_AVANCE_AVATAR, OFFICE_SF_IMAGE } from '../data/mockData';
 import { EmploymentType, JobPosting, WorkplaceType } from '../types';
 import { PaginatedResponse } from '../types/api';
-import { apiClient, withMockFallback } from './apiClient';
+import { apiClient, IS_MOCK_MODE, withMockFallback } from './apiClient';
 
 export interface JobSearchFilters {
   query?: string;
@@ -12,6 +12,7 @@ export interface JobSearchFilters {
   experience?: string;
   minSalaryK?: number;
   techTag?: string;
+  status?: 'ALL' | 'OPEN' | 'CLOSED';
   sortBy?: 'Most Relevant' | 'Latest Added' | 'Highest Salary' | 'Fewest Applicants';
 }
 
@@ -41,6 +42,8 @@ export interface SpringJobDto {
   featured?: boolean;
   status?: string;
   createdAt?: string;
+  createdById?: number | string;
+  createdByName?: string;
 }
 
 export interface CreateJobPayload {
@@ -95,9 +98,13 @@ function mapSpringJobToPosting(dto: SpringJobDto | JobPosting): JobPosting {
     tags: Array.isArray(s.skills) ? s.skills : [],
     postedAgo: s.createdAt ? new Date(s.createdAt).toLocaleDateString() : 'Recently posted',
     applicantsCount: s.applicantsCount ?? 0,
-    urgencyLabel: `${s.applicantsCount ?? 0} applicants • ${s.employmentType}`,
-    urgencyTone: 'tertiary',
+    urgencyLabel:
+      s.status && s.status !== 'OPEN'
+        ? `Closed • ${s.applicantsCount ?? 0} applicants`
+        : `${s.applicantsCount ?? 0} applicants • ${s.employmentType}`,
+    urgencyTone: s.status && s.status !== 'OPEN' ? 'neutral' : 'tertiary',
     featured: s.featured,
+    status: s.status || 'OPEN',
     aboutRole: s.description ? [s.description] : ['Engineering role at ' + s.company],
     responsibilities: [
       {
@@ -112,15 +119,17 @@ function mapSpringJobToPosting(dto: SpringJobDto | JobPosting): JobPosting {
       { icon: 'health_and_safety', title: 'Full Health Benefits', subtitle: 'Medical, dental, and vision' },
     ],
     hiringManager: {
-      name: 'Marcus Vance',
-      role: 'VP of Engineering',
+      name: s.createdByName || 'Hiring Team',
+      role: 'Talent Acquisition',
       avatar: MARCUS_AVANCE_AVATAR,
-      status: 'Active',
+      status: s.status && s.status !== 'OPEN' ? 'Closed' : 'Active',
       responseTime: '~24h response',
       quote: '“We value engineers who take deep ownership of user experience and system reliability.”',
     },
     officeImage: OFFICE_SF_IMAGE,
     officeLabel: s.location,
+    createdById: s.createdById != null ? String(s.createdById) : undefined,
+    createdByName: s.createdByName,
   };
 }
 
@@ -166,6 +175,10 @@ function filterMockJobs(filters: JobSearchFilters, sourceJobs: JobPosting[]): Jo
       !filters.techTag ||
       job.tags.some((t) => t.toLowerCase().includes(filters.techTag!.toLowerCase()));
 
+    const jobStatus = (job.status || 'OPEN').toUpperCase();
+    const matchesStatus =
+      !filters.status || filters.status === 'ALL' || jobStatus === filters.status;
+
     return (
       matchesQuery &&
       matchesLocation &&
@@ -174,7 +187,8 @@ function filterMockJobs(filters: JobSearchFilters, sourceJobs: JobPosting[]): Jo
       matchesEmployment &&
       matchesExperience &&
       matchesSalary &&
-      matchesTag
+      matchesTag &&
+      matchesStatus
     );
   });
 
@@ -223,7 +237,7 @@ function mapSortParams(sortBy?: JobSearchFilters['sortBy']): { sortBy: string; d
 export const jobService = {
   async listJobs(
     filters: JobSearchFilters = {},
-    sourceJobs: JobPosting[] = INITIAL_JOBS
+    sourceJobs: JobPosting[] = IS_MOCK_MODE ? INITIAL_JOBS : []
   ): Promise<JobPosting[]> {
     const page = await this.searchJobsPage(filters, 0, 50, sourceJobs);
     return page.content;
@@ -233,7 +247,7 @@ export const jobService = {
     filters: JobSearchFilters = {},
     page = 0,
     size = 10,
-    sourceJobs: JobPosting[] = INITIAL_JOBS
+    sourceJobs: JobPosting[] = IS_MOCK_MODE ? INITIAL_JOBS : []
   ): Promise<PaginatedResponse<JobPosting>> {
     return withMockFallback(
       async () => {
@@ -248,6 +262,7 @@ export const jobService = {
             (filters.workplace && filters.workplace !== 'All') ||
             (filters.employmentType && filters.employmentType !== 'All') ||
             (filters.experience && filters.experience !== 'All') ||
+            (filters.status && filters.status !== 'ALL') ||
             effectiveMinSalary
         );
         const endpoint = hasFilters ? '/jobs/search' : '/jobs';
@@ -265,6 +280,7 @@ export const jobService = {
             experience:
               filters.experience && filters.experience !== 'All' ? filters.experience : undefined,
             minSalaryK: effectiveMinSalary,
+            status: filters.status && filters.status !== 'ALL' ? filters.status : undefined,
             page,
             size,
             sortBy: sort.sortBy,
@@ -306,11 +322,45 @@ export const jobService = {
 
   async getJobById(
     id: string,
-    sourceJobs: JobPosting[] = INITIAL_JOBS
+    sourceJobs: JobPosting[] = IS_MOCK_MODE ? INITIAL_JOBS : []
   ): Promise<JobPosting | undefined> {
     return withMockFallback(
-      async () => mapSpringJobToPosting(await apiClient.get<SpringJobDto>(`/jobs/${encodeURIComponent(id)}`)),
+      async () => {
+        const trimmed = String(id).trim();
+        if (/^\d+$/.test(trimmed)) {
+          return mapSpringJobToPosting(
+            await apiClient.get<SpringJobDto>(`/jobs/${encodeURIComponent(trimmed)}`)
+          );
+        }
+        const localMatch = sourceJobs.find((j) => j.id === trimmed);
+        if (localMatch) {
+          const searchRes = await apiClient.get<PaginatedResponse<SpringJobDto> | SpringJobDto[]>(
+            '/jobs/search',
+            { params: { q: localMatch.title, size: 10 } }
+          );
+          const items = Array.isArray(searchRes) ? searchRes : searchRes.content || [];
+          const matched = items.find(
+            (item) =>
+              item.title.toLowerCase() === localMatch.title.toLowerCase() &&
+              item.company.toLowerCase() === localMatch.company.toLowerCase()
+          ) ?? items[0];
+          if (matched) {
+            return mapSpringJobToPosting(matched);
+          }
+        }
+        return undefined;
+      },
       () => sourceJobs.find((j) => j.id === id)
+    );
+  },
+
+  async listMyPostedJobs(): Promise<JobPosting[]> {
+    return withMockFallback(
+      async () => {
+        const res = await apiClient.get<SpringJobDto[]>('/jobs/my');
+        return Array.isArray(res) ? res.map(mapSpringJobToPosting) : [];
+      },
+      () => INITIAL_JOBS.slice(0, 2)
     );
   },
 
@@ -333,6 +383,23 @@ export const jobService = {
           await apiClient.put<SpringJobDto>(`/jobs/${encodeURIComponent(id)}`, payload)
         ),
       () => mapSpringJobToPosting({ id, ...payload, status: 'OPEN' })
+    );
+  },
+
+  async updateJobStatus(id: string, status: 'OPEN' | 'CLOSED' | 'PAUSED'): Promise<JobPosting> {
+    return withMockFallback(
+      async () =>
+        mapSpringJobToPosting(
+          await apiClient.patch<SpringJobDto>(`/jobs/${encodeURIComponent(id)}/status`, { status })
+        ),
+      () => {
+        const base = INITIAL_JOBS.find((j) => j.id === id) || INITIAL_JOBS[0];
+        return {
+          ...base,
+          id,
+          status,
+        };
+      }
     );
   },
 

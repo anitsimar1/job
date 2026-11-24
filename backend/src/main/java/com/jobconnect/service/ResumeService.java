@@ -5,6 +5,7 @@ import com.jobconnect.entity.Resume;
 import com.jobconnect.entity.User;
 import com.jobconnect.exception.BadRequestException;
 import com.jobconnect.exception.ResourceNotFoundException;
+import com.jobconnect.repository.ApplicationRepository;
 import com.jobconnect.repository.ResumeRepository;
 import com.jobconnect.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,17 +40,20 @@ public class ResumeService {
 
     private final ResumeRepository resumeRepository;
     private final UserRepository userRepository;
+    private final ApplicationRepository applicationRepository;
     private final DtoMapper dtoMapper;
     private final Path uploadRoot;
 
     public ResumeService(
             ResumeRepository resumeRepository,
             UserRepository userRepository,
+            ApplicationRepository applicationRepository,
             DtoMapper dtoMapper,
             @Value("${app.upload.dir:./storage/resumes}") String uploadDir
     ) {
         this.resumeRepository = resumeRepository;
         this.userRepository = userRepository;
+        this.applicationRepository = applicationRepository;
         this.dtoMapper = dtoMapper;
         this.uploadRoot = Paths.get(uploadDir).toAbsolutePath().normalize();
     }
@@ -130,7 +134,12 @@ public class ResumeService {
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Resume not found"));
 
-        if (!isAdmin && !resume.getUser().getEmail().equalsIgnoreCase(requesterEmail)) {
+        boolean isOwner = resume.getUser().getEmail().equalsIgnoreCase(requesterEmail);
+        boolean isAuthorizedPoster = !isAdmin && !isOwner
+                && applicationRepository != null
+                && applicationRepository.existsByResumeIdAndJobCreatedByEmailIgnoreCase(resumeId, requesterEmail);
+
+        if (!isAdmin && !isOwner && !isAuthorizedPoster) {
             throw new AccessDeniedException("You are not authorized to access another user's resume");
         }
 

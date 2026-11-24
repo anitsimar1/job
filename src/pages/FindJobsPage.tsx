@@ -26,6 +26,7 @@ export function FindJobsPage() {
   const [query, setQuery] = useState(initialQ || '');
   const [workplace, setWorkplace] = useState<WorkplaceType | 'All'>('All');
   const [employmentType, setEmploymentType] = useState<EmploymentType | 'All'>('All');
+  const [experience, setExperience] = useState<string>('All');
   const [minSalaryK, setMinSalaryK] = useState<number>(80);
   const [selectedTech, setSelectedTech] = useState<string>('');
   const [sortBy, setSortBy] = useState<NonNullable<JobSearchFilters['sortBy']>>('Latest Added');
@@ -46,7 +47,7 @@ export function FindJobsPage() {
 
   useEffect(() => {
     setPage(0);
-  }, [query, workplace, employmentType, minSalaryK, selectedTech, sortBy]);
+  }, [query, workplace, employmentType, experience, minSalaryK, selectedTech, sortBy]);
 
   useEffect(() => {
     let active = true;
@@ -57,6 +58,7 @@ export function FindJobsPage() {
           query,
           workplace,
           employmentType,
+          experience,
           minSalaryK,
           techTag: selectedTech,
           sortBy,
@@ -77,21 +79,23 @@ export function FindJobsPage() {
     return () => {
       active = false;
     };
-  }, [query, workplace, employmentType, minSalaryK, selectedTech, sortBy, page, jobs]);
+  }, [query, workplace, employmentType, experience, minSalaryK, selectedTech, sortBy, page, jobs]);
 
   const activeFilterCount = useMemo(
     () =>
       (workplace !== 'All' ? 1 : 0) +
       (employmentType !== 'All' ? 1 : 0) +
+      (experience !== 'All' ? 1 : 0) +
       (minSalaryK > 80 ? 1 : 0) +
       (selectedTech ? 1 : 0),
-    [workplace, employmentType, minSalaryK, selectedTech]
+    [workplace, employmentType, experience, minSalaryK, selectedTech]
   );
 
   const resetAllFilters = () => {
     setQuery('');
     setWorkplace('All');
     setEmploymentType('All');
+    setExperience('All');
     setMinSalaryK(80);
     setSelectedTech('');
     setPage(0);
@@ -206,11 +210,15 @@ export function FindJobsPage() {
             </button>
 
             <button
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md shrink-0 hover:bg-surface-container-low transition-colors shadow-sm"
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-full font-label-md text-label-md shrink-0 transition-colors shadow-sm ${
+                experience !== 'All'
+                  ? 'bg-primary text-on-primary'
+                  : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-low'
+              }`}
               onClick={() => setFilterSheetOpen(true)}
               type="button"
             >
-              <span>Experience</span>
+              <span>{experience !== 'All' ? `Exp: ${experience}` : 'Experience'}</span>
               <span className="material-symbols-outlined text-[16px]">expand_more</span>
             </button>
           </div>
@@ -347,9 +355,11 @@ export function FindJobsPage() {
 
         <FilterSheet
           employmentType={employmentType}
+          experience={experience}
           minSalaryK={minSalaryK}
           onClose={() => setFilterSheetOpen(false)}
           onEmploymentTypeChange={setEmploymentType}
+          onExperienceChange={setExperience}
           onMinSalaryChange={setMinSalaryK}
           onReset={resetAllFilters}
           onTechChange={setSelectedTech}

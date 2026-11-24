@@ -5,9 +5,14 @@ import { TESTIMONIAL_AVATAR } from '../data/mockData';
 import { useApp } from '../context/AppContext';
 import { authService, IS_MOCK_MODE } from '../services';
 import { ApiError } from '../types/api';
+import { browserContext } from '../utils/browserContext';
+import { evaluatePasswordStrength } from '../utils/passwordValidation';
+import { getHomeDashboardForRole } from '../components/auth/ProtectedRoute';
 
 const ROLE_OPTIONS = [
   { id: 'frontend', label: 'Frontend Engineer', icon: 'code' },
+  { id: 'fullstack', label: 'Full Stack Engineer', icon: 'layers' },
+  { id: 'backend', label: 'Backend Engineer', icon: 'dns' },
   { id: 'designer', label: 'Product Designer', icon: 'brush' },
   { id: 'devops', label: 'DevOps & Infra', icon: 'cloud_sync' },
   { id: 'data', label: 'Data Lead', icon: 'analytics' },
@@ -21,6 +26,8 @@ export function AuthPage() {
     useApp();
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [accountType, setAccountType] = useState<'JOB_SEEKER' | 'EMPLOYER'>('JOB_SEEKER');
+  const [companyName, setCompanyName] = useState('');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -30,12 +37,17 @@ export function AuthPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [selectedRoles, setSelectedRoles] = useState<string[]>(['Frontend Engineer']);
+  const [customRoleInput, setCustomRoleInput] = useState('');
   const [resumeFileName, setResumeFileName] = useState('');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [authBanner, setAuthBanner] = useState<{ title: string; msg: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const googleOAuthUrl = authService.getGoogleOAuthUrl();
+  const isEmbeddedIframe = browserContext.isEmbeddedIframe();
+  const passwordChecks = evaluatePasswordStrength(password);
 
   const redirectFrom = (location.state as { from?: string } | null)?.from;
 
@@ -64,8 +76,7 @@ export function AuthPage() {
             msg: `Welcome ${session.userName}! Directing to your workspace...`,
           });
           showToast('Signed in with Google', 'verified');
-          const target =
-            redirectFrom || (session.role === 'ADMIN' ? '/admin' : '/dashboard');
+          const target = redirectFrom || getHomeDashboardForRole(session.role);
           window.setTimeout(() => navigate(target, { replace: true }), 600);
         } else {
           const fallbackMsg =
@@ -86,6 +97,15 @@ export function AuthPage() {
     );
   };
 
+  const handleAddCustomRole = () => {
+    const trimmed = customRoleInput.trim();
+    if (!trimmed) return;
+    setSelectedRoles((prev) =>
+      prev.some((r) => r.toLowerCase() === trimmed.toLowerCase()) ? prev : [...prev, trimmed]
+    );
+    setCustomRoleInput('');
+  };
+
   const validateForm = (): string | null => {
     const trimmedEmail = email.trim();
     if (!/^\S+@\S+\.\S+$/.test(trimmedEmail)) {
@@ -94,19 +114,25 @@ export function AuthPage() {
     if (password.length < 8) {
       return 'Password must be at least 8 characters long.';
     }
-    if (mode === 'signup') {
-      if (fullName.trim().length < 2) {
-        return 'Full name must be at least 2 characters.';
+      if (mode === 'signup') {
+        if (accountType === 'EMPLOYER' && companyName.trim().length < 2) {
+          return 'Company or organization name must be at least 2 characters.';
+        }
+        if (!passwordChecks.hasLetter || !passwordChecks.hasDigit || !passwordChecks.hasSpecial) {
+          return 'Password must contain a combination of letters, digits, and special characters.';
+        }
+        if (fullName.trim().length < 2) {
+          return 'Full name must be at least 2 characters.';
+        }
+        if (phone.trim().length < 6) {
+          return 'Please enter a valid contact phone number.';
+        }
+        if (password !== confirmPassword) {
+          return 'Passwords do not match. Please verify both password fields.';
+        }
       }
-      if (phone.trim().length < 6) {
-        return 'Please enter a valid contact phone number.';
-      }
-      if (password !== confirmPassword) {
-        return 'Passwords do not match. Please verify both password fields.';
-      }
-    }
-    return null;
-  };
+      return null;
+    };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,27 +153,47 @@ export function AuthPage() {
           password,
           confirmPassword,
           phone: phone.trim(),
-          targetRoles: selectedRoles,
-          resumeFileName,
+          accountType,
+          companyName: accountType === 'EMPLOYER' ? companyName.trim() : undefined,
+          targetRoles: accountType === 'JOB_SEEKER' ? selectedRoles : undefined,
+          resumeFileName: accountType === 'JOB_SEEKER' ? resumeFileName : undefined,
+          rememberMe,
         });
-        if (resumeFile && !IS_MOCK_MODE) {
+        if (accountType === 'JOB_SEEKER' && resumeFile && !IS_MOCK_MODE) {
           await uploadResume(resumeFile).catch(() => undefined);
         }
+        const isEmployer = session.role === 'EMPLOYER' || accountType === 'EMPLOYER';
         setAuthBanner({
-          title: IS_MOCK_MODE ? 'Candidate Account Created (Preview Mode)' : 'Candidate Account Created',
-          msg: `Welcome aboard ${fullName.trim()}! Directing to your personalized workspace...`,
+          title: IS_MOCK_MODE
+            ? isEmployer
+              ? 'Admin (Job Poster) Account Created (Preview Mode)'
+              : 'Candidate Account Created (Preview Mode)'
+            : isEmployer
+              ? 'Admin (Job Poster) Account Created'
+              : 'Candidate Account Created',
+          msg: isEmployer
+            ? `Welcome ${fullName.trim()}! Launching your hiring workspace for ${companyName.trim()}...`
+            : `Welcome aboard ${fullName.trim()}! Directing to your personalized workspace...`,
         });
-        const target =
-          redirectFrom || (session.role === 'ADMIN' ? '/admin' : '/dashboard');
+        const target = redirectFrom || getHomeDashboardForRole(session.role);
         window.setTimeout(() => navigate(target), 800);
       } else {
-        const session = await login({ email: email.trim(), password, rememberMe });
+        const session = await login({
+          email: email.trim(),
+          password,
+          rememberMe,
+          ...(accountType === 'EMPLOYER' ? { accountType: 'EMPLOYER' as const } : {}),
+        });
+        const isPoster = session.role === 'EMPLOYER' || (accountType === 'EMPLOYER' && session.role === 'ADMIN');
         setAuthBanner({
           title: IS_MOCK_MODE ? 'Signed In (Preview Mode)' : 'Signed In',
-          msg: 'Retrieving your matched executive opportunities...',
+          msg: isPoster
+            ? 'Loading your posted jobs & applicant pipeline...'
+            : 'Retrieving your matched executive opportunities...',
         });
         const target =
-          redirectFrom || (session.role === 'ADMIN' ? '/admin' : '/dashboard');
+          redirectFrom ||
+          (isPoster ? '/employer/dashboard' : getHomeDashboardForRole(session.role));
         window.setTimeout(() => navigate(target), 800);
       }
     } catch (err) {
@@ -176,7 +222,7 @@ export function AuthPage() {
       );
       return;
     }
-    window.location.assign(authService.getGoogleOAuthUrl());
+    window.location.assign(googleOAuthUrl);
   };
 
   const handleSocialPreview = (provider: string) => {
@@ -216,7 +262,7 @@ export function AuthPage() {
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     className="px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-sm font-semibold"
-                    onClick={() => navigate(authSession.role === 'ADMIN' ? '/admin' : '/dashboard')}
+                    onClick={() => navigate(getHomeDashboardForRole(authSession.role))}
                     type="button"
                   >
                     Continue
@@ -244,12 +290,22 @@ export function AuthPage() {
                 <span>Executive Talent Discovery</span>
               </div>
               <h1 className="font-headline-xl-mobile text-headline-xl-mobile text-on-surface tracking-tight">
-                {mode === 'signup' ? 'Join Top 3% Tech Talent' : 'Welcome back'}
+                {mode === 'signup'
+                  ? accountType === 'EMPLOYER'
+                    ? 'Hire Vetted Tech Talent'
+                    : 'Join Top 3% Tech Talent'
+                  : accountType === 'EMPLOYER'
+                    ? 'Admin (Job Poster) Sign In'
+                    : 'Welcome back'}
               </h1>
               <p className="font-body-sm text-body-sm text-on-surface-variant max-w-xs">
                 {mode === 'signup'
-                  ? 'Create your free portfolio profile and get discovered by high-growth startups.'
-                  : 'Connect with verified tech companies, transparent compensation & leadership roles.'}
+                  ? accountType === 'EMPLOYER'
+                    ? 'Register as Admin (Job Poster) to publish roles, review resumes & receive applicant emails.'
+                    : 'Create your free candidate profile and get discovered by high-growth startups.'
+                  : accountType === 'EMPLOYER'
+                    ? 'Sign in to your Admin Job Poster dashboard to manage listings & incoming candidates.'
+                    : 'Connect with verified tech companies, transparent compensation & leadership roles.'}
               </p>
             </div>
 
@@ -293,31 +349,68 @@ export function AuthPage() {
             <div className="bg-surface-container-lowest rounded-xl p-5 shadow-md flex flex-col gap-y-5">
               {/* Social Buttons */}
               <div className="flex flex-col gap-y-2.5">
-                <button
-                  className="w-full h-11 px-4 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors flex items-center justify-center gap-3 text-on-surface font-label-lg text-label-lg active:scale-[0.99]"
-                  onClick={handleGoogleSignIn}
-                  type="button"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      fill="#4285F4"
-                    />
-                    <path
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      fill="#34A853"
-                    />
-                    <path
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                      fill="#FBBC05"
-                    />
-                    <path
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                      fill="#EA4335"
-                    />
-                  </svg>
-                  <span>Continue with Google</span>
-                </button>
+                {isEmbeddedIframe && !IS_MOCK_MODE ? (
+                  <div className="flex flex-col gap-1">
+                    <a
+                      className="w-full h-11 px-4 rounded-lg bg-surface-container-low hover:bg-surface-container border border-outline-variant/60 transition-colors flex items-center justify-center gap-3 text-on-surface font-label-lg text-label-lg active:scale-[0.99]"
+                      href={googleOAuthUrl}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      <svg className="w-5 h-5" viewBox="0 0 24 24">
+                        <path
+                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                          fill="#4285F4"
+                        />
+                        <path
+                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                          fill="#34A853"
+                        />
+                        <path
+                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                          fill="#FBBC05"
+                        />
+                        <path
+                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                          fill="#EA4335"
+                        />
+                      </svg>
+                      <span>Continue with Google</span>
+                      <span className="material-symbols-outlined text-[16px] text-outline">
+                        open_in_new
+                      </span>
+                    </a>
+                    <p className="text-[11px] text-on-surface-variant text-center font-body-sm">
+                      Opens Google Sign-In in a top-level tab (Google blocks embedded preview frames).
+                    </p>
+                  </div>
+                ) : (
+                  <button
+                    className="w-full h-11 px-4 rounded-lg bg-surface-container-low hover:bg-surface-container border border-outline-variant/60 transition-colors flex items-center justify-center gap-3 text-on-surface font-label-lg text-label-lg active:scale-[0.99]"
+                    onClick={handleGoogleSignIn}
+                    type="button"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                      <path
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                        fill="#4285F4"
+                      />
+                      <path
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        fill="#34A853"
+                      />
+                      <path
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                        fill="#FBBC05"
+                      />
+                      <path
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                        fill="#EA4335"
+                      />
+                    </svg>
+                    <span>Continue with Google</span>
+                  </button>
+                )}
 
                 <div className="grid grid-cols-2 gap-2.5">
                   <button
@@ -367,8 +460,100 @@ export function AuthPage() {
                   </div>
                 )}
 
+                {/* Role Selector (visible on both Sign In and Create Account) */}
+                <div className="flex flex-col gap-y-2">
+                  <label className="font-label-md text-label-md text-on-surface flex items-center justify-between">
+                    <span>{mode === 'signin' ? 'Sign In As' : 'Account Type'}</span>
+                    <span className="text-on-surface-variant font-body-sm text-xs">
+                      Separate dashboard
+                    </span>
+                  </label>
+                  <div
+                    aria-label="Account Type"
+                    className="grid grid-cols-2 gap-2"
+                    role="group"
+                  >
+                    <button
+                      aria-pressed={accountType === 'JOB_SEEKER'}
+                      className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 cursor-pointer ${
+                        accountType === 'JOB_SEEKER'
+                          ? 'bg-primary text-on-primary border-primary shadow-md ring-2 ring-primary/20'
+                          : 'bg-surface-container-low text-on-surface border-outline-variant hover:border-primary/50'
+                      }`}
+                      onClick={() => setAccountType('JOB_SEEKER')}
+                      type="button"
+                    >
+                      <span className="material-symbols-outlined text-[20px] shrink-0 mt-0.5">
+                        person_search
+                      </span>
+                      <span className="flex flex-col min-w-0">
+                        <span className="font-label-md font-bold leading-tight">Candidate</span>
+                        <span
+                          className={`text-[11px] leading-tight mt-0.5 ${
+                            accountType === 'JOB_SEEKER'
+                              ? 'text-on-primary/80'
+                              : 'text-on-surface-variant'
+                          }`}
+                        >
+                          Apply &amp; track offers
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      aria-pressed={accountType === 'EMPLOYER'}
+                      className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 cursor-pointer ${
+                        accountType === 'EMPLOYER'
+                          ? 'bg-primary text-on-primary border-primary shadow-md ring-2 ring-primary/20'
+                          : 'bg-surface-container-low text-on-surface border-outline-variant hover:border-primary/50'
+                      }`}
+                      onClick={() => setAccountType('EMPLOYER')}
+                      type="button"
+                    >
+                      <span className="material-symbols-outlined text-[20px] shrink-0 mt-0.5">
+                        admin_panel_settings
+                      </span>
+                      <span className="flex flex-col min-w-0">
+                        <span className="font-label-md font-bold leading-tight">Admin</span>
+                        <span
+                          className={`text-[11px] leading-tight mt-0.5 ${
+                            accountType === 'EMPLOYER'
+                              ? 'text-on-primary/80'
+                              : 'text-on-surface-variant'
+                          }`}
+                        >
+                          Job Poster • Post &amp; hire
+                        </span>
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
                 {mode === 'signup' && (
                   <>
+                    {accountType === 'EMPLOYER' && (
+                      <div className="flex flex-col gap-y-1.5">
+                        <label className="font-label-md text-label-md text-on-surface flex items-center justify-between">
+                          <span>Company / Organization Name</span>
+                          <span className="text-on-surface-variant font-body-sm text-xs">
+                            Required
+                          </span>
+                        </label>
+                        <div className="relative flex items-center">
+                          <span className="material-symbols-outlined absolute left-3 text-[18px] text-outline">
+                            apartment
+                          </span>
+                          <input
+                            className="w-full h-11 pl-10 pr-3 rounded-lg bg-surface-container-lowest text-on-surface font-body-md text-body-md outline-none transition-all placeholder:text-outline focus:bg-surface-bright shadow-sm"
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            placeholder="Acme Cloud Inc."
+                            required
+                            type="text"
+                            value={companyName}
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex flex-col gap-y-1.5">
                       <label className="font-label-md text-label-md text-on-surface flex items-center justify-between">
                         <span>Full Name</span>
@@ -473,6 +658,34 @@ export function AuthPage() {
                       </span>
                     </button>
                   </div>
+                  {mode === 'signup' && (
+                    <div
+                      aria-label="Password requirements"
+                      className="grid grid-cols-2 gap-x-3 gap-y-1 pt-1 px-0.5"
+                    >
+                      {[
+                        { ok: passwordChecks.minLength, label: '8+ characters' },
+                        { ok: passwordChecks.hasLetter, label: 'Letters (A-Z, a-z)' },
+                        { ok: passwordChecks.hasDigit, label: 'Digits (0-9)' },
+                        { ok: passwordChecks.hasSpecial, label: 'Special (!@#$...)' },
+                      ].map((rule) => (
+                        <div
+                          key={rule.label}
+                          className={`flex items-center gap-1.5 text-[11px] font-body-sm transition-colors ${
+                            rule.ok ? 'text-tertiary-container font-semibold' : 'text-on-surface-variant'
+                          }`}
+                        >
+                          <span
+                            className="material-symbols-outlined text-[14px] shrink-0"
+                            style={rule.ok ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                          >
+                            {rule.ok ? 'check_circle' : 'radio_button_unchecked'}
+                          </span>
+                          <span>{rule.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {mode === 'signup' && (
@@ -480,7 +693,21 @@ export function AuthPage() {
                     <div className="flex flex-col gap-y-1.5">
                       <label className="font-label-md text-label-md text-on-surface flex items-center justify-between">
                         <span>Confirm Password</span>
-                        <span className="text-on-surface-variant font-body-sm text-xs">Min 8 chars</span>
+                        <span
+                          className={`font-body-sm text-xs ${
+                            confirmPassword.length === 0
+                              ? 'text-on-surface-variant'
+                              : confirmPassword === password
+                                ? 'text-tertiary-container font-semibold'
+                                : 'text-error'
+                          }`}
+                        >
+                          {confirmPassword.length === 0
+                            ? 'Must match password'
+                            : confirmPassword === password
+                              ? 'Passwords match'
+                              : 'Passwords do not match'}
+                        </span>
                       </label>
                       <div className="relative flex items-center">
                         <span className="material-symbols-outlined absolute left-3 text-[18px] text-outline">
@@ -508,36 +735,87 @@ export function AuthPage() {
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-y-2 pt-1">
+                    {accountType === 'JOB_SEEKER' && (
+                      <>
+                        <div className="flex flex-col gap-y-2 pt-1">
                       <div className="flex items-center justify-between">
                         <label className="font-label-md text-label-md text-on-surface">
                           Target Career Focus
                         </label>
-                        <span className="font-label-sm text-label-sm text-on-surface-variant">
-                          Select 1 or more
+                        <span className="font-label-sm text-label-sm text-secondary font-semibold">
+                          {selectedRoles.length > 0
+                            ? `${selectedRoles.length} selected`
+                            : 'Select 1 or more'}
                         </span>
                       </div>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-2" role="group" aria-label="Target Career Focus">
                         {ROLE_OPTIONS.map((role) => {
                           const selected = selectedRoles.includes(role.label);
                           return (
                             <button
                               key={role.id}
-                              className={`px-3 py-1.5 rounded-full font-label-sm text-label-sm flex items-center gap-1 transition-all active:scale-95 shadow-sm ${
+                              aria-pressed={selected}
+                              className={`px-3 py-1.5 rounded-lg border font-label-sm text-label-sm flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer ${
                                 selected
-                                  ? 'bg-surface-container-high text-primary'
-                                  : 'bg-surface-container text-on-surface-variant'
+                                  ? 'bg-primary text-on-primary border-primary shadow-md ring-2 ring-primary/20 font-semibold'
+                                  : 'bg-surface-container-low text-on-surface border-outline-variant hover:border-primary/50 hover:bg-surface-container'
                               }`}
                               onClick={() => toggleRole(role.label)}
                               type="button"
                             >
-                              <span className="material-symbols-outlined text-[14px]">
-                                {role.icon}
+                              <span
+                                className="material-symbols-outlined text-[15px]"
+                                style={selected ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                              >
+                                {selected ? 'check_circle' : role.icon}
                               </span>
                               <span>{role.label}</span>
                             </button>
                           );
                         })}
+                        {selectedRoles
+                          .filter((r) => !ROLE_OPTIONS.some((opt) => opt.label === r))
+                          .map((customRole) => (
+                            <button
+                              key={customRole}
+                              aria-pressed={true}
+                              className="px-3 py-1.5 rounded-lg border bg-primary text-on-primary border-primary shadow-md ring-2 ring-primary/20 font-label-sm text-label-sm font-semibold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                              onClick={() => toggleRole(customRole)}
+                              type="button"
+                            >
+                              <span
+                                className="material-symbols-outlined text-[15px]"
+                                style={{ fontVariationSettings: "'FILL' 1" }}
+                              >
+                                check_circle
+                              </span>
+                              <span>{customRole}</span>
+                            </button>
+                          ))}
+                      </div>
+                      <div className="flex items-center gap-2 pt-0.5">
+                        <input
+                          aria-label="Custom career focus role"
+                          className="flex-1 h-9 px-3 rounded-lg bg-surface-container-low border border-outline-variant/60 text-on-surface font-body-sm text-xs outline-none focus:border-primary"
+                          onChange={(e) => setCustomRoleInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddCustomRole();
+                            }
+                          }}
+                          placeholder="Add another role (e.g. Mobile Lead)..."
+                          type="text"
+                          value={customRoleInput}
+                        />
+                        <button
+                          className="h-9 px-3 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-sm text-xs font-semibold transition-colors disabled:opacity-50"
+                          disabled={!customRoleInput.trim()}
+                          onClick={handleAddCustomRole}
+                          type="button"
+                        >
+                          Add
+                        </button>
                       </div>
                     </div>
 
@@ -573,7 +851,7 @@ export function AuthPage() {
                           arrow_forward
                         </span>
                         <input
-                          accept=".pdf,.docx,.doc"
+                          accept=".pdf,.docx"
                           className="hidden"
                           onChange={(e) => {
                             const f = e.target.files?.[0];
@@ -586,28 +864,63 @@ export function AuthPage() {
                           type="file"
                         />
                       </div>
-                    </div>
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
 
-                <div className="flex items-center gap-2.5 pt-0.5">
-                  <label className="relative flex items-center gap-2.5 cursor-pointer select-none">
-                    <input
-                      checked={rememberMe}
-                      className="sr-only peer"
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      type="checkbox"
-                    />
-                    <div className="w-5 h-5 rounded bg-surface-container peer-checked:bg-primary transition-colors flex items-center justify-center">
-                      <span className="material-symbols-outlined text-white text-[16px] scale-0 peer-checked:scale-100 transition-transform">
-                        check
+                <label className="group flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl border border-outline-variant/50 bg-surface-container-low/70 hover:bg-surface-container-low hover:border-primary/40 cursor-pointer select-none transition-all">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="relative flex items-center justify-center shrink-0">
+                      <input
+                        checked={rememberMe}
+                        className="sr-only peer"
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        type="checkbox"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all peer-focus-visible:ring-2 peer-focus-visible:ring-primary/40 peer-focus-visible:ring-offset-1 ${
+                          rememberMe
+                            ? 'bg-primary border-primary text-on-primary shadow-sm'
+                            : 'bg-surface-container-lowest border-outline text-transparent group-hover:border-primary/70'
+                        }`}
+                      >
+                        <svg
+                          className={`w-3.5 h-3.5 transition-all duration-150 ${
+                            rememberMe ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={3}
+                          viewBox="0 0 24 24"
+                        >
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </span>
+                    </span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-label-md text-label-md text-on-surface font-semibold leading-tight">
+                        Stay signed in for 30 days
+                      </span>
+                      <span className="font-body-sm text-[11px] text-on-surface-variant leading-snug">
+                        {rememberMe
+                          ? 'Keep your session active on this browser'
+                          : 'Sign out automatically when this tab closes'}
                       </span>
                     </div>
-                    <span className="font-label-md text-label-md text-on-surface">
-                      Stay signed in for 30 days
-                    </span>
-                  </label>
-                </div>
+                  </div>
+                  <span
+                    className={`shrink-0 text-[11px] font-label-sm font-semibold ${
+                      rememberMe ? 'text-primary' : 'text-on-surface-variant'
+                    }`}
+                  >
+                    {rememberMe ? '30 days' : 'Session only'}
+                  </span>
+                </label>
 
                 <button
                   className={`mt-2 w-full min-h-[48px] rounded-lg text-on-primary font-label-lg text-label-lg shadow-md hover:bg-secondary active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-60 ${

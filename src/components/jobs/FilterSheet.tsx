@@ -7,6 +7,8 @@ interface FilterSheetProps {
   onWorkplaceChange: (w: WorkplaceType | 'All') => void;
   employmentType: EmploymentType | 'All';
   onEmploymentTypeChange: (e: EmploymentType | 'All') => void;
+  experience: string;
+  onExperienceChange: (exp: string) => void;
   minSalaryK: number;
   onMinSalaryChange: (val: number) => void;
   selectedTech: string;
@@ -16,6 +18,7 @@ interface FilterSheetProps {
 }
 
 const TECH_TAGS = ['React', 'TypeScript', 'Next.js', 'Node.js', 'GraphQL'];
+const EXPERIENCE_OPTIONS = ['All', 'Mid Level', 'Senior Level', 'Staff / Lead', 'Principal'];
 
 export function FilterSheet({
   open,
@@ -24,6 +27,8 @@ export function FilterSheet({
   onWorkplaceChange,
   employmentType,
   onEmploymentTypeChange,
+  experience,
+  onExperienceChange,
   minSalaryK,
   onMinSalaryChange,
   selectedTech,
@@ -36,6 +41,7 @@ export function FilterSheet({
   const activeFilterCount =
     (workplace !== 'All' ? 1 : 0) +
     (employmentType !== 'All' ? 1 : 0) +
+    (experience !== 'All' ? 1 : 0) +
     (minSalaryK > 80 ? 1 : 0) +
     (selectedTech ? 1 : 0);
 
@@ -117,6 +123,29 @@ export function FilterSheet({
             </div>
           </div>
 
+          {/* Experience Level */}
+          <div className="flex flex-col gap-2">
+            <span className="font-label-lg text-label-lg font-bold text-on-surface">
+              Experience Level
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {EXPERIENCE_OPTIONS.map((exp) => (
+                <button
+                  key={exp}
+                  className={`px-3.5 py-2 rounded-lg font-label-md text-label-md font-semibold transition-all ${
+                    experience === exp
+                      ? 'bg-primary-container text-on-primary'
+                      : 'bg-surface-container-low text-on-surface hover:bg-surface-container'
+                  }`}
+                  onClick={() => onExperienceChange(exp)}
+                  type="button"
+                >
+                  {exp === 'All' ? 'All Levels' : exp}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Minimum Compensation Slider */}
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center">
@@ -128,6 +157,7 @@ export function FilterSheet({
               </span>
             </div>
             <input
+              aria-label="Minimum Base Salary"
               className="w-full h-2 bg-surface-container rounded-lg appearance-none cursor-pointer accent-secondary"
               max={240}
               min={80}

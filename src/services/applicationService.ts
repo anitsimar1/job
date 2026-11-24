@@ -6,6 +6,7 @@ import {
   JobApplication,
   JobPosting,
 } from '../types';
+import { ApiError } from '../types/api';
 import { apiClient, withMockFallback } from './apiClient';
 
 export interface SpringApplicationDto {
@@ -23,6 +24,10 @@ export interface SpringApplicationDto {
   resumeId?: number | string | null;
   resumeFileName?: string | null;
   coverLetter?: string;
+  experienceYears?: string;
+  workAuthorized?: boolean;
+  requiresSponsorship?: boolean;
+  noticePeriod?: string;
   status: BackendApplicationStatus;
   appliedAt?: string;
 }
@@ -103,7 +108,29 @@ export const applicationService = {
     return withMockFallback(
       async () => {
         const rawJobId = String(job.id).trim();
-        const numericJobId = /^\d+$/.test(rawJobId) ? Number(rawJobId) : rawJobId;
+        let numericJobId: number | null = /^\d+$/.test(rawJobId) ? Number(rawJobId) : null;
+        if (numericJobId === null) {
+          const searchRes = await apiClient.get<{ content?: Array<{ id: number | string; title: string; company: string }> } | Array<{ id: number | string; title: string; company: string }>>(
+            '/jobs/search',
+            { params: { q: job.title, size: 10 } }
+          );
+          const items = Array.isArray(searchRes) ? searchRes : searchRes.content || [];
+          const matched = items.find(
+            (item) =>
+              item.title.toLowerCase() === job.title.toLowerCase() &&
+              item.company.toLowerCase() === job.company.toLowerCase()
+          );
+          if (matched && /^\d+$/.test(String(matched.id))) {
+            numericJobId = Number(matched.id);
+          }
+        }
+        if (numericJobId === null) {
+          throw new ApiError({
+            message: 'This preview listing is not active on the live server. Please choose a live job from Find Jobs.',
+            status: 404,
+            code: 'JOB_NOT_FOUND',
+          });
+        }
         const rawResumeId = String(formData.resumeId || '').trim();
         const numericResumeId = /^\d+$/.test(rawResumeId) ? Number(rawResumeId) : null;
         const res = await apiClient.post<SpringApplicationDto>('/applications', {
@@ -148,6 +175,40 @@ export const applicationService = {
         );
       },
       () => undefined
+    );
+  },
+
+  async listJobApplications(jobId: string): Promise<SpringApplicationDto[]> {
+    return withMockFallback(
+      async () => {
+        const res = await apiClient.get<SpringApplicationDto[]>(
+          `/jobs/${encodeURIComponent(jobId)}/applications`
+        );
+        return Array.isArray(res) ? res : [];
+      },
+      () => []
+    );
+  },
+
+  async updateApplicationStatus(
+    applicationId: string | number,
+    status: BackendApplicationStatus
+  ): Promise<SpringApplicationDto> {
+    return withMockFallback(
+      () =>
+        apiClient.patch<SpringApplicationDto>(
+          `/applications/${encodeURIComponent(String(applicationId))}/status`,
+          { status }
+        ),
+      () => ({
+        id: applicationId,
+        jobId: 0,
+        jobTitle: 'Preview Role',
+        company: 'Preview Company',
+        location: 'Remote',
+        salary: '$150k',
+        status,
+      })
     );
   },
 

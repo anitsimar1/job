@@ -27,7 +27,8 @@ public class DtoMapper {
                 user.isEnabled(),
                 user.getCreatedAt(),
                 user.getAuthProvider() != null ? user.getAuthProvider().name() : AuthProvider.LOCAL.name(),
-                user.isEmailVerified()
+                user.isEmailVerified(),
+                user.getCompanyName()
         );
     }
 
@@ -56,7 +57,8 @@ public class DtoMapper {
                 user.getLinkedinUrl(),
                 user.getPortfolioUrl(),
                 roleNames,
-                resumeDtos
+                resumeDtos,
+                user.getCompanyName()
         );
     }
 
@@ -80,6 +82,7 @@ public class DtoMapper {
                         .filter(s -> !s.isEmpty())
                         .toList();
 
+        User poster = job.getCreatedBy();
         return new JobDto(
                 job.getId(),
                 job.getSlug(),
@@ -105,7 +108,9 @@ public class DtoMapper {
                 job.getApplicantsCount(),
                 job.isFeatured(),
                 job.getStatus(),
-                job.getCreatedAt()
+                job.getCreatedAt(),
+                poster != null ? poster.getId() : null,
+                poster != null ? poster.getFullName() : null
         );
     }
 

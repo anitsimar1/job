@@ -30,6 +30,7 @@ export interface JobPosting {
   urgencyTone?: 'tertiary' | 'secondary' | 'neutral';
   featured?: boolean;
   isHot?: boolean;
+  status?: string;
   aboutRole: string[];
   responsibilities: {
     icon: string;
@@ -52,6 +53,8 @@ export interface JobPosting {
   };
   officeImage?: string;
   officeLabel?: string;
+  createdById?: string;
+  createdByName?: string;
 }
 
 export interface FeaturedEmployer {
@@ -143,6 +146,7 @@ export interface VerifiedSkill {
 export interface CandidateProfile {
   fullName: string;
   drawerDisplayName: string;
+  companyName?: string;
   title: string;
   email: string;
   phone: string;
@@ -204,6 +208,7 @@ export interface UserSummary {
   fullName: string;
   email: string;
   phone?: string;
+  companyName?: string;
   profileImage?: string;
   roles: string[];
   enabled: boolean;
@@ -218,7 +223,9 @@ export interface AuthSession {
   userId?: string;
   userEmail: string;
   userName: string;
-  role: 'JOB_SEEKER' | 'ADMIN';
+  companyName?: string;
+  profileImage?: string;
+  role: 'JOB_SEEKER' | 'EMPLOYER' | 'ADMIN';
   authProvider?: 'LOCAL' | 'GOOGLE';
   emailVerified?: boolean;
   rememberMe: boolean;

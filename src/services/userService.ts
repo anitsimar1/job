@@ -1,5 +1,6 @@
 import { INITIAL_PROFILE } from '../data/mockData';
 import { CandidateProfile, ExperienceItem, ResumeDocument, VerifiedSkill } from '../types';
+import { avatarStorage, isSafeAvatarSrc } from '../utils/avatarStorage';
 import { apiClient, withMockFallback } from './apiClient';
 import { SpringResumeDto, toResumeDocument } from './resumeService';
 
@@ -16,6 +17,7 @@ export interface SpringUserProfileDto {
   fullName: string;
   email: string;
   phone?: string;
+  companyName?: string;
   profileImage?: string;
   title?: string;
   location?: string;
@@ -42,23 +44,29 @@ function mergeProfileDto(dto: SpringUserProfileDto, base: CandidateProfile = INI
         .map((name, idx) => ({ id: `sk-${idx + 1}`, name, verified: idx < 3 }))
     : base.skills;
 
-  const parsedRoles = dto.targetRoles
-    ? dto.targetRoles
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : base.targetRoles;
+  const parsedRoles =
+    typeof dto.targetRoles === 'string'
+      ? dto.targetRoles
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : base.targetRoles;
 
-  const parsedArrangements = dto.workArrangements
-    ? dto.workArrangements
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : base.workArrangements;
+  const parsedArrangements =
+    typeof dto.workArrangements === 'string'
+      ? dto.workArrangements
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : base.workArrangements;
 
   const parsedResumes: ResumeDocument[] = Array.isArray(dto.resumes)
     ? dto.resumes.map(toResumeDocument)
     : base.resumes;
+
+  const storedAvatar = avatarStorage.get(dto.email);
+  const resolvedAvatar =
+    storedAvatar || (isSafeAvatarSrc(dto.profileImage) ? dto.profileImage : '') || (base === INITIAL_PROFILE ? '' : base.avatar);
 
   return {
     ...base,
@@ -66,9 +74,10 @@ function mergeProfileDto(dto: SpringUserProfileDto, base: CandidateProfile = INI
     drawerDisplayName: dto.fullName || base.drawerDisplayName,
     email: dto.email || base.email,
     phone: dto.phone ?? base.phone,
+    companyName: dto.companyName ?? base.companyName,
     title: dto.title || base.title,
     location: dto.location || base.location,
-    avatar: dto.profileImage || base.avatar,
+    avatar: resolvedAvatar,
     skills: parsedSkills,
     targetRoles: parsedRoles,
     desiredSalaryMin: dto.desiredSalaryMin ?? base.desiredSalaryMin,
@@ -101,11 +110,13 @@ export const userService = {
   },
 
   async updateProfile(profile: CandidateProfile): Promise<CandidateProfile> {
+    avatarStorage.set(profile.email, profile.avatar);
     return withMockFallback(
       async () => {
         const payload = {
           fullName: profile.fullName,
           phone: profile.phone,
+          companyName: profile.companyName,
           title: profile.title,
           location: profile.location,
           professionalSummary: profile.availabilityStatus,
@@ -125,6 +136,7 @@ export const userService = {
           githubUrl: profile.links.github,
           linkedinUrl: profile.links.linkedin,
           portfolioUrl: profile.links.portfolio,
+          ...(isSafeAvatarSrc(profile.avatar) ? { profileImage: profile.avatar } : {}),
         };
         const updatedDto = await apiClient.put<SpringUserProfileDto>('/users/profile', payload);
         return mergeProfileDto(updatedDto, profile);

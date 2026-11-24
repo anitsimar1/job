@@ -82,6 +82,7 @@ export function JobDetailsPage() {
 
   const isSaved = savedJobIds.includes(job.id);
   const isApplied = appliedJobIds.includes(job.id);
+  const isClosed = Boolean(job.status && job.status !== 'OPEN');
 
   const scrollToSection = (tab: DetailTab, sectionId: string) => {
     setActiveTab(tab);
@@ -192,8 +193,14 @@ export function JobDetailsPage() {
                   </span>
                 </div>
               </div>
-              <span className="px-space-xs py-0.5 rounded-full bg-surface-container font-label-sm text-label-sm text-secondary font-medium shrink-0">
-                Actively Hiring
+              <span
+                className={`px-space-xs py-0.5 rounded-full font-label-sm text-label-sm font-medium shrink-0 ${
+                  isClosed
+                    ? 'bg-error-container text-on-error-container'
+                    : 'bg-surface-container text-secondary'
+                }`}
+              >
+                {isClosed ? `Closed (${job.status})` : 'Actively Hiring'}
               </span>
             </div>
 
@@ -587,17 +594,28 @@ export function JobDetailsPage() {
               </span>
             </button>
 
-            <Link
-              className={`flex-1 h-12 rounded-lg flex items-center justify-center gap-space-xs font-label-lg text-label-lg font-bold shadow-md active:scale-[0.98] transition-all ${
-                isApplied
-                  ? 'bg-tertiary-container text-tertiary-fixed'
-                  : 'bg-primary-container hover:bg-secondary text-on-primary'
-              }`}
-              to={`/apply/${job.id}`}
-            >
-              <span>{isApplied ? 'View / Update Application' : 'Apply Now'}</span>
-              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-            </Link>
+            {isClosed ? (
+              <button
+                className="flex-1 h-12 rounded-lg flex items-center justify-center gap-space-xs font-label-lg text-label-lg font-bold bg-surface-container-high text-on-surface-variant cursor-not-allowed"
+                disabled
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[18px]">block</span>
+                <span>Applications Closed</span>
+              </button>
+            ) : (
+              <Link
+                className={`flex-1 h-12 rounded-lg flex items-center justify-center gap-space-xs font-label-lg text-label-lg font-bold shadow-md active:scale-[0.98] transition-all ${
+                  isApplied
+                    ? 'bg-tertiary-container text-tertiary-fixed'
+                    : 'bg-primary-container hover:bg-secondary text-on-primary'
+                }`}
+                to={`/apply/${job.id}`}
+              >
+                <span>{isApplied ? 'View / Update Application' : 'Apply Now'}</span>
+                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>

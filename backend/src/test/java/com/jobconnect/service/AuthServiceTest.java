@@ -339,4 +339,168 @@ class AuthServiceTest {
         verify(userRepository).save(captor.capture());
         assertThat(captor.getValue().getFullName()).hasSize(150);
     }
+
+    @Test
+    void register_persistsTargetRolesWhenProvided() {
+        RegisterRequest req = new RegisterRequest(
+                "Elena Rostova",
+                "elena.roles@techmail.io",
+                "StrongPass123!",
+                "StrongPass123!",
+                "+1 555 234 8901",
+                "  Frontend Engineer, Product Designer  "
+        );
+
+        when(userRepository.existsByEmailIgnoreCase("elena.roles@techmail.io")).thenReturn(false);
+        when(roleRepository.findByName(RoleName.ROLE_JOB_SEEKER)).thenReturn(Optional.of(seekerRole));
+        when(passwordEncoder.encode("StrongPass123!")).thenReturn("$2a$12$hashed");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            u.setId(55L);
+            return u;
+        });
+        when(jwtTokenProvider.generateToken(any(User.class))).thenReturn("jwt-roles");
+        when(jwtProperties.getCookieName()).thenReturn("jobconnect_jwt");
+        when(jwtProperties.getCookieSameSite()).thenReturn("Lax");
+        when(jwtProperties.getExpirationMs()).thenReturn(86400000L);
+
+        authService.register(req);
+
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(userCaptor.capture());
+        assertThat(userCaptor.getValue().getTargetRoles()).isEqualTo("Frontend Engineer, Product Designer");
+    }
+
+    @Test
+    void register_rejectsWeakPasswordWithoutCombination() {
+        RegisterRequest noSpecial = new RegisterRequest(
+                "Elena Rostova",
+                "weak1@techmail.io",
+                "Password123",
+                "Password123",
+                "+1 555 234 8901"
+        );
+        RegisterRequest noDigit = new RegisterRequest(
+                "Elena Rostova",
+                "weak2@techmail.io",
+                "PasswordOnly!",
+                "PasswordOnly!",
+                "+1 555 234 8901"
+        );
+        RegisterRequest noLetter = new RegisterRequest(
+                "Elena Rostova",
+                "weak3@techmail.io",
+                "12345678!",
+                "12345678!",
+                "+1 555 234 8901"
+        );
+
+        assertThatThrownBy(() -> authService.register(noSpecial))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("letters, digits, and a special character");
+        assertThatThrownBy(() -> authService.register(noDigit))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("letters, digits, and a special character");
+        assertThatThrownBy(() -> authService.register(noLetter))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("letters, digits, and a special character");
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void register_createsEmployerWithCompanyAndBlocksAdminSelfAssignment() {
+        Role employerRole = new Role(RoleName.ROLE_EMPLOYER);
+        employerRole.setId(2L);
+
+        RegisterRequest missingCompany = new RegisterRequest(
+                "Marcus Vance", "marcus@apex.io", "StrongPass123!", "StrongPass123!",
+                "+1 555 900 1000", null, true, "EMPLOYER", "   "
+        );
+        when(userRepository.existsByEmailIgnoreCase("marcus@apex.io")).thenReturn(false);
+        assertThatThrownBy(() -> authService.register(missingCompany))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Company");
+
+        RegisterRequest validEmployer = new RegisterRequest(
+                "Marcus Vance", "marcus@apex.io", "StrongPass123!", "StrongPass123!",
+                "+1 555 900 1000", null, true, "EMPLOYER", "Apex Cloud Systems"
+        );
+        when(roleRepository.findByName(RoleName.ROLE_EMPLOYER)).thenReturn(Optional.of(employerRole));
+        when(passwordEncoder.encode("StrongPass123!")).thenReturn("$2a$12$hashed");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            u.setId(80L);
+            return u;
+        });
+        when(jwtTokenProvider.generateToken(any(User.class))).thenReturn("employer-jwt");
+        when(jwtProperties.getCookieName()).thenReturn("jobconnect_jwt");
+        when(jwtProperties.getCookieSameSite()).thenReturn("Lax");
+        when(jwtProperties.getExpirationMs()).thenReturn(86400000L);
+
+        AuthService.AuthResult result = authService.register(validEmployer);
+        assertThat(result.response().role()).isEqualTo("ROLE_EMPLOYER");
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+        assertThat(captor.getValue().getCompanyName()).isEqualTo("Apex Cloud Systems");
+        assertThat(captor.getValue().getRoles()).extracting(Role::getName).containsExactly(RoleName.ROLE_EMPLOYER);
+
+        RegisterRequest attemptedAdmin = new RegisterRequest(
+                "Sneaky User", "sneaky@test.io", "StrongPass123!", "StrongPass123!",
+                "+1 555 900 2000", null, true, "ADMIN", null
+        );
+        when(userRepository.existsByEmailIgnoreCase("sneaky@test.io")).thenReturn(false);
+        when(roleRepository.findByName(RoleName.ROLE_JOB_SEEKER)).thenReturn(Optional.of(seekerRole));
+
+        AuthService.AuthResult adminBlockedResult = authService.register(attemptedAdmin);
+        assertThat(adminBlockedResult.response().role()).isEqualTo("ROLE_JOB_SEEKER");
+    }
+
+    @Test
+    void login_enforcesSelectedPortalRole() {
+        Role employerRole = new Role(RoleName.ROLE_EMPLOYER);
+        employerRole.setId(2L);
+
+        User candidate = new User();
+        candidate.setId(10L);
+        candidate.setEmail("cand@test.io");
+        candidate.setPassword("$2a$12$hashed");
+        candidate.setRoles(new HashSet<>(Set.of(seekerRole)));
+
+        User poster = new User();
+        poster.setId(20L);
+        poster.setEmail("poster@test.io");
+        poster.setPassword("$2a$12$hashed");
+        poster.setRoles(new HashSet<>(Set.of(employerRole)));
+
+        when(userRepository.findByEmailIgnoreCase("cand@test.io")).thenReturn(Optional.of(candidate));
+        when(userRepository.findByEmailIgnoreCase("poster@test.io")).thenReturn(Optional.of(poster));
+        when(authenticationManager.authenticate(any()))
+                .thenReturn(new UsernamePasswordAuthenticationToken("cand@test.io", null));
+
+        // Candidate trying to sign in under Admin/Job Poster tab is rejected
+        assertThatThrownBy(() ->
+                authService.login(new LoginRequest("cand@test.io", "StrongPass123!", true, "EMPLOYER")))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Candidate");
+
+        // Job Poster trying to sign in under Candidate tab is rejected
+        when(authenticationManager.authenticate(any()))
+                .thenReturn(new UsernamePasswordAuthenticationToken("poster@test.io", null));
+        assertThatThrownBy(() ->
+                authService.login(new LoginRequest("poster@test.io", "StrongPass123!", true, "JOB_SEEKER")))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Admin");
+
+        // Job Poster signing in under Admin/Job Poster tab succeeds
+        when(jwtTokenProvider.generateToken(poster)).thenReturn("poster-jwt");
+        when(jwtProperties.getCookieName()).thenReturn("jobconnect_jwt");
+        when(jwtProperties.getCookieSameSite()).thenReturn("Lax");
+        when(jwtProperties.getExpirationMs()).thenReturn(86400000L);
+
+        AuthService.AuthResult okResult = authService.login(
+                new LoginRequest("poster@test.io", "StrongPass123!", true, "EMPLOYER")
+        );
+        assertThat(okResult.response().role()).isEqualTo("ROLE_EMPLOYER");
+    }
 }

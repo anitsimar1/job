@@ -5,6 +5,7 @@ import com.jobconnect.dto.ApplicationDto;
 import com.jobconnect.dto.ApplicationRequest;
 import com.jobconnect.dto.OfferDecisionRequest;
 import com.jobconnect.dto.OfferDecisionResponse;
+import com.jobconnect.dto.UpdateApplicationStatusRequest;
 import com.jobconnect.service.ApplicationService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -73,5 +74,20 @@ public class ApplicationController {
         OfferDecisionResponse result =
                 applicationService.respondToOffer(offerId, request.decision(), authentication.getName());
         return ResponseEntity.ok(ApiResponse.ok("Offer decision recorded", result));
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<ApplicationDto>> updateApplicationStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateApplicationStatusRequest request,
+            Authentication authentication
+    ) {
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        ApplicationDto updated = applicationService.updateApplicationStatusForPoster(
+                id, request.status(), authentication.getName(), isAdmin
+        );
+        return ResponseEntity.ok(ApiResponse.ok("Application status updated", updated));
     }
 }

@@ -6,7 +6,9 @@ import com.jobconnect.entity.Job;
 import com.jobconnect.entity.JobStatus;
 import com.jobconnect.entity.SavedJob;
 import com.jobconnect.entity.User;
+import com.jobconnect.exception.BadRequestException;
 import com.jobconnect.exception.ResourceNotFoundException;
+import com.jobconnect.repository.ApplicationRepository;
 import com.jobconnect.repository.JobRepository;
 import com.jobconnect.repository.SavedJobRepository;
 import com.jobconnect.repository.UserRepository;
@@ -14,6 +16,7 @@ import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -25,36 +28,49 @@ import java.util.UUID;
 @Service
 public class JobService {
 
+    private static final List<JobStatus> PUBLIC_VISIBLE_STATUSES = List.of(JobStatus.OPEN, JobStatus.CLOSED);
+
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
     private final SavedJobRepository savedJobRepository;
+    private final ApplicationRepository applicationRepository;
     private final DtoMapper dtoMapper;
 
     public JobService(
             JobRepository jobRepository,
             UserRepository userRepository,
             SavedJobRepository savedJobRepository,
+            ApplicationRepository applicationRepository,
             DtoMapper dtoMapper
     ) {
         this.jobRepository = jobRepository;
         this.userRepository = userRepository;
         this.savedJobRepository = savedJobRepository;
+        this.applicationRepository = applicationRepository;
         this.dtoMapper = dtoMapper;
     }
 
     @Transactional(readOnly = true)
     public Page<JobDto> getJobs(Pageable pageable) {
+        return getJobs(null, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<JobDto> getJobs(String statusFilter, Pageable pageable) {
+        JobStatus requestedStatus = parsePublicStatusFilter(statusFilter);
         return jobRepository.findAll(
-                (root, query, cb) -> cb.equal(root.get("status"), JobStatus.OPEN),
+                (root, query, cb) -> requestedStatus != null
+                        ? cb.equal(root.get("status"), requestedStatus)
+                        : root.get("status").in(PUBLIC_VISIBLE_STATUSES),
                 pageable
-        ).map(dtoMapper::toJobDto);
+        ).map(this::toLiveJobDto);
     }
 
     @Transactional(readOnly = true)
     public JobDto getJobById(Long id) {
         Job job = jobRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Job not found with id: " + id));
-        return dtoMapper.toJobDto(job);
+        return toLiveJobDto(job);
     }
 
     @Transactional(readOnly = true)
@@ -68,9 +84,29 @@ public class JobService {
             Integer minSalaryK,
             Pageable pageable
     ) {
+        return searchJobs(queryText, location, experience, employmentType, workplace, sector, minSalaryK, null, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<JobDto> searchJobs(
+            String queryText,
+            String location,
+            String experience,
+            String employmentType,
+            String workplace,
+            String sector,
+            Integer minSalaryK,
+            String statusFilter,
+            Pageable pageable
+    ) {
+        JobStatus requestedStatus = parsePublicStatusFilter(statusFilter);
         Specification<Job> spec = (root, criteriaQuery, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
-            predicates.add(cb.equal(root.get("status"), JobStatus.OPEN));
+            if (requestedStatus != null) {
+                predicates.add(cb.equal(root.get("status"), requestedStatus));
+            } else {
+                predicates.add(root.get("status").in(PUBLIC_VISIBLE_STATUSES));
+            }
 
             if (StringUtils.hasText(queryText)) {
                 String pattern = "%" + queryText.trim().toLowerCase() + "%";
@@ -110,37 +146,86 @@ public class JobService {
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
-        return jobRepository.findAll(spec, pageable).map(dtoMapper::toJobDto);
+        return jobRepository.findAll(spec, pageable).map(this::toLiveJobDto);
+    }
+
+    @Transactional(readOnly = true)
+    public List<JobDto> getJobsByPoster(String posterEmail) {
+        User poster = userRepository.findByEmailIgnoreCase(posterEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return jobRepository.findByCreatedByIdOrderByCreatedAtDesc(poster.getId())
+                .stream()
+                .map(this::toLiveJobDto)
+                .toList();
     }
 
     @Transactional
-    public JobDto createJob(JobRequest request, String adminEmail) {
-        User admin = userRepository.findByEmailIgnoreCase(adminEmail).orElse(null);
+    public JobDto createJob(JobRequest request, String posterEmail) {
+        User poster = userRepository.findByEmailIgnoreCase(posterEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Job job = new Job();
         job.setSlug(generateSlug(request.title(), request.company()));
         applyRequest(job, request);
-        job.setCreatedBy(admin);
-        job.setStatus(request.status() != null ? request.status() : JobStatus.OPEN);
+        if (!StringUtils.hasText(job.getCompany()) && StringUtils.hasText(poster.getCompanyName())) {
+            job.setCompany(poster.getCompanyName().trim());
+        }
+        job.setCreatedBy(poster);
+        job.setApplicantsCount(0);
+        JobStatus requestedStatus = request.status();
+        if (requestedStatus == JobStatus.CLOSED || requestedStatus == JobStatus.PAUSED) {
+            job.setStatus(requestedStatus);
+        } else {
+            job.setStatus(JobStatus.OPEN);
+        }
 
         return dtoMapper.toJobDto(jobRepository.save(job));
     }
 
     @Transactional
     public JobDto updateJob(Long id, JobRequest request) {
+        return updateJob(id, request, null, true);
+    }
+
+    @Transactional
+    public JobDto updateJob(Long id, JobRequest request, String requesterEmail, boolean isAdmin) {
         Job job = jobRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Job not found with id: " + id));
+        verifyOwnership(job, requesterEmail, isAdmin);
+
         applyRequest(job, request);
         if (request.status() != null) {
+            if (!isAdmin && request.status() != JobStatus.OPEN && request.status() != JobStatus.CLOSED && request.status() != JobStatus.PAUSED) {
+                throw new BadRequestException("Job status must be OPEN, PAUSED, or CLOSED");
+            }
             job.setStatus(request.status());
         }
-        return dtoMapper.toJobDto(jobRepository.save(job));
+        return toLiveJobDto(jobRepository.save(job));
+    }
+
+    @Transactional
+    public JobDto updateJobStatus(Long id, JobStatus newStatus, String requesterEmail, boolean isAdmin) {
+        Job job = jobRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Job not found with id: " + id));
+        verifyOwnership(job, requesterEmail, isAdmin);
+
+        if (!isAdmin && newStatus != JobStatus.OPEN && newStatus != JobStatus.CLOSED && newStatus != JobStatus.PAUSED) {
+            throw new BadRequestException("Job posters may only set status to OPEN, CLOSED, or PAUSED");
+        }
+        job.setStatus(newStatus);
+        return toLiveJobDto(jobRepository.save(job));
     }
 
     @Transactional
     public void deleteJob(Long id) {
+        deleteJob(id, null, true);
+    }
+
+    @Transactional
+    public void deleteJob(Long id, String requesterEmail, boolean isAdmin) {
         Job job = jobRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Job not found with id: " + id));
+        verifyOwnership(job, requesterEmail, isAdmin);
         jobRepository.delete(job);
     }
 
@@ -163,6 +248,42 @@ public class JobService {
         User user = userRepository.findByEmailIgnoreCase(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         savedJobRepository.deleteByUserIdAndJobId(user.getId(), jobId);
+    }
+
+    private void verifyOwnership(Job job, String requesterEmail, boolean isAdmin) {
+        if (isAdmin) {
+            return;
+        }
+        if (!StringUtils.hasText(requesterEmail)
+                || job.getCreatedBy() == null
+                || !job.getCreatedBy().getEmail().equalsIgnoreCase(requesterEmail)) {
+            throw new AccessDeniedException("You are only permitted to manage jobs you posted");
+        }
+    }
+
+    private JobStatus parsePublicStatusFilter(String statusFilter) {
+        if (!StringUtils.hasText(statusFilter) || "ALL".equalsIgnoreCase(statusFilter.trim())) {
+            return null;
+        }
+        String normalized = statusFilter.trim().toUpperCase();
+        if ("OPEN".equals(normalized)) {
+            return JobStatus.OPEN;
+        }
+        if ("CLOSED".equals(normalized)) {
+            return JobStatus.CLOSED;
+        }
+        return null;
+    }
+
+    private JobDto toLiveJobDto(Job job) {
+        if (applicationRepository != null && job.getId() != null) {
+            long dbCount = applicationRepository.countByJobId(job.getId());
+            int existingCount = job.getApplicantsCount() != null ? job.getApplicantsCount() : 0;
+            if (dbCount > existingCount) {
+                job.setApplicantsCount(Math.toIntExact(dbCount));
+            }
+        }
+        return dtoMapper.toJobDto(job);
     }
 
     private void applyRequest(Job job, JobRequest request) {

@@ -190,6 +190,31 @@ export function unwrapApiResponse<T>(payload: T | ApiResponse<T>): T {
   return payload as T;
 }
 
+function isLocalhostUrl(url: string): boolean {
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(url);
+}
+
+function buildNetworkErrorMessage(rawMessage?: string): string {
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+  const isHostedOrigin =
+    Boolean(hostname) && hostname !== 'localhost' && hostname !== '127.0.0.1';
+
+  if (API_BASE_URL && isLocalhostUrl(API_BASE_URL) && isHostedOrigin) {
+    return `Cannot reach ${API_BASE_URL} from this hosted preview (${origin}). Start your Spring Boot backend locally with CORS enabled for this origin, or set VITE_API_BASE_URL to your deployed HTTPS backend URL.`;
+  }
+
+  if (API_BASE_URL) {
+    return `Unable to reach ${API_BASE_URL}. Confirm the Spring Boot backend is running/awake and allows CORS for ${origin || 'this origin'}.`;
+  }
+
+  return `Unable to reach the backend server${
+    rawMessage && rawMessage !== 'Network Error'
+      ? `: ${rawMessage}`
+      : '. Confirm the Spring Boot backend is running, allows CORS, and VITE_API_BASE_URL is configured.'
+  }`;
+}
+
 /**
  * Normalizes Axios, Spring Boot validation, and network errors into a consistent ApiError.
  */
@@ -208,7 +233,7 @@ export function normalizeApiError(error: unknown): ApiError {
       return new ApiError({
         message: isTimeout
           ? 'The server is taking longer than expected to respond (cold start). Please try again in a few seconds.'
-          : axiosErr.message || 'Unable to reach backend server',
+          : buildNetworkErrorMessage(axiosErr.message),
         status: isTimeout ? 408 : 0,
         code: isTimeout ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR',
         isNetworkError: true,

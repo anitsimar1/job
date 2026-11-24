@@ -67,6 +67,11 @@ public class AuthService {
 
     @Transactional
     public AuthResult register(RegisterRequest request) {
+        if (!isStrongPassword(request.password())) {
+            throw new BadRequestException(
+                    "Password must be at least 8 characters and include letters, digits, and a special character"
+            );
+        }
         if (!request.password().equals(request.confirmPassword())) {
             throw new BadRequestException("Password and confirm password do not match");
         }
@@ -76,29 +81,76 @@ public class AuthService {
             throw new DuplicateResourceException("An account with email " + normalizedEmail + " already exists");
         }
 
-        // Public registration strictly assigns ROLE_JOB_SEEKER; ADMIN cannot be self-assigned.
-        Role seekerRole = roleRepository.findByName(RoleName.ROLE_JOB_SEEKER)
-                .orElseGet(() -> roleRepository.save(new Role(RoleName.ROLE_JOB_SEEKER)));
+        RoleName requestedRoleName = resolveRegistrationRole(request.accountType());
+        if (requestedRoleName == RoleName.ROLE_EMPLOYER && !StringUtils.hasText(request.companyName())) {
+            throw new BadRequestException("Company or organization name is required for job poster accounts");
+        }
+
+        // Public registration strictly assigns ROLE_JOB_SEEKER or ROLE_EMPLOYER; ADMIN cannot be self-assigned.
+        Role assignedRole = roleRepository.findByName(requestedRoleName)
+                .orElseGet(() -> roleRepository.save(new Role(requestedRoleName)));
 
         User user = new User();
         user.setFullName(request.fullName().trim());
         user.setEmail(normalizedEmail);
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setPhone(request.phone().trim());
+        if (StringUtils.hasText(request.companyName())) {
+            user.setCompanyName(request.companyName().trim());
+        }
+        if (StringUtils.hasText(request.targetRoles())) {
+            user.setTargetRoles(request.targetRoles().trim());
+        }
         user.setAuthProvider(AuthProvider.LOCAL);
         user.setEmailVerified(false);
         user.setEnabled(true);
-        user.setRoles(new HashSet<>(Set.of(seekerRole)));
+        user.setRoles(new HashSet<>(Set.of(assignedRole)));
 
         User saved = userRepository.save(user);
         String token = jwtTokenProvider.generateToken(saved);
-        ResponseCookie cookie = buildAuthCookie(token, true);
+        boolean remember = request.rememberMe() == null || request.rememberMe();
+        ResponseCookie cookie = buildAuthCookie(token, remember);
         AuthResponse response = new AuthResponse(
                 dtoMapper.toUserSummary(saved),
-                RoleName.ROLE_JOB_SEEKER.name(),
-                jwtProperties.getExpirationMs()
+                requestedRoleName.name(),
+                jwtProperties.getExpirationMs(),
+                token
         );
         return new AuthResult(response, cookie);
+    }
+
+    private static RoleName resolveRegistrationRole(String accountType) {
+        if (!StringUtils.hasText(accountType)) {
+            return RoleName.ROLE_JOB_SEEKER;
+        }
+        String normalized = accountType.trim().toUpperCase();
+        if ("EMPLOYER".equals(normalized)
+                || "ROLE_EMPLOYER".equals(normalized)
+                || "JOB_POSTER".equals(normalized)
+                || "POSTER".equals(normalized)) {
+            return RoleName.ROLE_EMPLOYER;
+        }
+        return RoleName.ROLE_JOB_SEEKER;
+    }
+
+    private static boolean isStrongPassword(String password) {
+        if (password == null || password.length() < 8) {
+            return false;
+        }
+        boolean hasLetter = false;
+        boolean hasDigit = false;
+        boolean hasSpecial = false;
+        for (int i = 0; i < password.length(); i++) {
+            char ch = password.charAt(i);
+            if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')) {
+                hasLetter = true;
+            } else if (ch >= '0' && ch <= '9') {
+                hasDigit = true;
+            } else if (!Character.isWhitespace(ch)) {
+                hasSpecial = true;
+            }
+        }
+        return hasLetter && hasDigit && hasSpecial;
     }
 
     @Transactional(readOnly = true)
@@ -120,6 +172,8 @@ public class AuthService {
         User user = userRepository.findByEmailIgnoreCase(authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
 
+        validateRequestedLoginRole(user, request.loginAs());
+
         String token = jwtTokenProvider.generateToken(user);
         boolean remember = request.rememberMe() == null || request.rememberMe();
         ResponseCookie cookie = buildAuthCookie(token, remember);
@@ -129,9 +183,47 @@ public class AuthService {
         AuthResponse response = new AuthResponse(
                 dtoMapper.toUserSummary(user),
                 primaryRole,
-                jwtProperties.getExpirationMs()
+                jwtProperties.getExpirationMs(),
+                token
         );
         return new AuthResult(response, cookie);
+    }
+
+    private void validateRequestedLoginRole(User user, String loginAs) {
+        if (!StringUtils.hasText(loginAs)) {
+            return;
+        }
+        String requested = loginAs.trim().toUpperCase();
+        boolean hasAdmin = user.getRoles().stream()
+                .anyMatch(r -> r.getName() == RoleName.ROLE_ADMIN);
+        boolean hasEmployer = user.getRoles().stream()
+                .anyMatch(r -> r.getName() == RoleName.ROLE_EMPLOYER);
+        boolean hasSeeker = user.getRoles().stream()
+                .anyMatch(r -> r.getName() == RoleName.ROLE_JOB_SEEKER);
+
+        if ("EMPLOYER".equals(requested)
+                || "ROLE_EMPLOYER".equals(requested)
+                || "JOB_POSTER".equals(requested)
+                || "POSTER".equals(requested)
+                || "ADMIN".equals(requested)
+                || "ROLE_ADMIN".equals(requested)) {
+            if (!hasEmployer && !hasAdmin) {
+                throw new BadRequestException(
+                        "This account is registered as a Candidate. Please select 'Candidate' to sign in."
+                );
+            }
+            return;
+        }
+
+        if ("JOB_SEEKER".equals(requested)
+                || "ROLE_JOB_SEEKER".equals(requested)
+                || "CANDIDATE".equals(requested)) {
+            if (!hasSeeker && hasEmployer && !hasAdmin) {
+                throw new BadRequestException(
+                        "This account is registered as Admin (Job Poster). Please select 'Admin' to sign in."
+                );
+            }
+        }
     }
 
     @Transactional
@@ -225,7 +317,8 @@ public class AuthService {
         AuthResponse response = new AuthResponse(
                 dtoMapper.toUserSummary(user),
                 resolvePrimaryRole(user),
-                jwtProperties.getExpirationMs()
+                jwtProperties.getExpirationMs(),
+                token
         );
         return new AuthResult(response, cookie);
     }
@@ -273,11 +366,17 @@ public class AuthService {
     }
 
     private String resolvePrimaryRole(User user) {
-        return user.getRoles().stream()
-                .map(r -> r.getName().name())
-                .filter(name -> name.equals(RoleName.ROLE_ADMIN.name()))
-                .findFirst()
-                .orElse(RoleName.ROLE_JOB_SEEKER.name());
+        boolean isAdmin = user.getRoles().stream()
+                .anyMatch(r -> r.getName() == RoleName.ROLE_ADMIN);
+        if (isAdmin) {
+            return RoleName.ROLE_ADMIN.name();
+        }
+        boolean isEmployer = user.getRoles().stream()
+                .anyMatch(r -> r.getName() == RoleName.ROLE_EMPLOYER);
+        if (isEmployer) {
+            return RoleName.ROLE_EMPLOYER.name();
+        }
+        return RoleName.ROLE_JOB_SEEKER.name();
     }
 
     @Scheduled(cron = "0 0 * * * *")

@@ -15,6 +15,7 @@ import { JobDetailsPage } from './pages/JobDetailsPage';
 import { ApplyJobPage } from './pages/ApplyJobPage';
 import { MyApplicationsPage } from './pages/MyApplicationsPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { EmployerDashboardPage } from './pages/EmployerDashboardPage';
 import { ProfileResumePage } from './pages/ProfileResumePage';
 import { AdminConsolePage } from './pages/AdminConsolePage';
 import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
@@ -75,9 +76,25 @@ export default function App() {
             }
           />
           <Route
+            path="/employer/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['EMPLOYER', 'ADMIN']}>
+                <EmployerDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/poster/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['EMPLOYER', 'ADMIN']}>
+                <EmployerDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/profile"
             element={
-              <ProtectedRoute allowedRoles={['JOB_SEEKER', 'ADMIN']}>
+              <ProtectedRoute allowedRoles={['JOB_SEEKER', 'EMPLOYER', 'ADMIN']}>
                 <ProfileResumePage />
               </ProtectedRoute>
             }

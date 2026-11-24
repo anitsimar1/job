@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BrandLogo } from '../common/BrandLogo';
 import { SafeImage } from '../common/SafeImage';
-import { USER_AVATAR_URL } from '../../data/mockData';
 import { useApp } from '../../context/AppContext';
 import { IS_MOCK_MODE } from '../../services';
 
@@ -17,27 +16,46 @@ export function MobileTabShell({ pageLabel, children }: MobileTabShellProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile, authSession, logout, offerSpotlight, applications } = useApp();
+  const userAvatarSrc = profile.avatar || authSession.profileImage || '';
+  const userDisplayName =
+    (authSession.isAuthenticated && authSession.userName) || profile.fullName || 'Candidate';
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
   };
 
-  const navItems = [
-    { path: '/', label: 'Home', icon: 'home' },
-    { path: '/jobs', label: 'Find Jobs', icon: 'search' },
-    { path: '/applications', label: 'My Applications', icon: 'assignment' },
-    { path: '/dashboard', label: 'Dashboard', icon: 'grid_view' },
-    { path: '/profile', label: 'Profile & Resume', icon: 'person' },
-  ];
+  const isEmployer = authSession.isAuthenticated && authSession.role === 'EMPLOYER';
 
-  const bottomTabs = [
-    { path: '/', label: 'Home', icon: 'home' },
-    { path: '/jobs', label: 'Search', icon: 'travel_explore' },
-    { path: '/applications', label: 'Applications', icon: 'work_outline' },
-    { path: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-    { path: '/profile', label: 'Profile', icon: 'account_circle' },
-  ];
+  const navItems = isEmployer
+    ? [
+        { path: '/', label: 'Home', icon: 'home' },
+        { path: '/jobs', label: 'Job Board', icon: 'search' },
+        { path: '/employer/dashboard', label: 'Admin Dashboard', icon: 'admin_panel_settings' },
+        { path: '/profile', label: 'Account', icon: 'person' },
+      ]
+    : [
+        { path: '/', label: 'Home', icon: 'home' },
+        { path: '/jobs', label: 'Find Jobs', icon: 'search' },
+        { path: '/applications', label: 'My Applications', icon: 'assignment' },
+        { path: '/dashboard', label: 'Dashboard', icon: 'grid_view' },
+        { path: '/profile', label: 'Profile & Resume', icon: 'person' },
+      ];
+
+  const bottomTabs = isEmployer
+    ? [
+        { path: '/', label: 'Home', icon: 'home' },
+        { path: '/jobs', label: 'Board', icon: 'travel_explore' },
+        { path: '/employer/dashboard', label: 'Admin', icon: 'admin_panel_settings' },
+        { path: '/profile', label: 'Account', icon: 'account_circle' },
+      ]
+    : [
+        { path: '/', label: 'Home', icon: 'home' },
+        { path: '/jobs', label: 'Search', icon: 'travel_explore' },
+        { path: '/applications', label: 'Applications', icon: 'work_outline' },
+        { path: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
+        { path: '/profile', label: 'Profile', icon: 'account_circle' },
+      ];
 
   return (
     <div className="bg-surface text-on-surface font-body-md flex flex-col min-h-screen relative antialiased">
@@ -107,52 +125,86 @@ export function MobileTabShell({ pageLabel, children }: MobileTabShellProps) {
                     Close
                   </button>
                 </div>
-                <div className="flex flex-col gap-2">
-                  <button
-                    className="text-left p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors"
-                    onClick={() => {
-                      setNotifOpen(false);
-                      navigate('/applications');
-                    }}
-                    type="button"
-                  >
-                    <p className="font-label-md text-on-surface font-semibold">
-                      Offer Received: {offerSpotlight.company}
-                    </p>
-                    <p className="font-body-sm text-xs text-on-surface-variant">
-                      {offerSpotlight.roleTitle} • {offerSpotlight.expiresIn}
-                    </p>
-                  </button>
-                  <button
-                    className="text-left p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors"
-                    onClick={() => {
-                      setNotifOpen(false);
-                      navigate('/dashboard');
-                    }}
-                    type="button"
-                  >
-                    <p className="font-label-md text-on-surface font-semibold">
-                      Final Round Tomorrow at 2:00 PM
-                    </p>
-                    <p className="font-body-sm text-xs text-on-surface-variant">
-                      {applications[0]?.company} • System Design with Marcus Vance
-                    </p>
-                  </button>
-                </div>
+                {isEmployer ? (
+                  <div className="flex flex-col gap-2">
+                    <button
+                      className="text-left p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors"
+                      onClick={() => {
+                        setNotifOpen(false);
+                        navigate('/employer/dashboard');
+                      }}
+                      type="button"
+                    >
+                      <p className="font-label-md text-on-surface font-semibold">
+                        Applicant Email Alerts Active
+                      </p>
+                      <p className="font-body-sm text-xs text-on-surface-variant">
+                        Every candidate application emails {authSession.userEmail} &amp; updates your Poster Dashboard.
+                      </p>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <button
+                      className="text-left p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors"
+                      onClick={() => {
+                        setNotifOpen(false);
+                        navigate('/applications');
+                      }}
+                      type="button"
+                    >
+                      <p className="font-label-md text-on-surface font-semibold">
+                        Offer Received: {offerSpotlight.company}
+                      </p>
+                      <p className="font-body-sm text-xs text-on-surface-variant">
+                        {offerSpotlight.roleTitle} • {offerSpotlight.expiresIn}
+                      </p>
+                    </button>
+                    <button
+                      className="text-left p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors"
+                      onClick={() => {
+                        setNotifOpen(false);
+                        navigate('/dashboard');
+                      }}
+                      type="button"
+                    >
+                      <p className="font-label-md text-on-surface font-semibold">
+                        Final Round Tomorrow at 2:00 PM
+                      </p>
+                      <p className="font-body-sm text-xs text-on-surface-variant">
+                        {applications[0]?.company} • System Design with Marcus Vance
+                      </p>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
-            <Link
-              aria-label="Profile & Resume"
-              className="w-11 h-11 flex items-center justify-center rounded-full hover:ring-2 hover:ring-secondary/30 transition-all"
-              to="/profile"
-            >
-              <SafeImage
-                alt={profile.fullName}
-                className="w-8 h-8 rounded-full object-cover"
-                src={USER_AVATAR_URL}
-              />
-            </Link>
+            {authSession.isAuthenticated ? (
+              <Link
+                aria-label="Profile & Resume"
+                className="w-11 h-11 flex items-center justify-center rounded-full hover:ring-2 hover:ring-secondary/30 transition-all"
+                to="/profile"
+              >
+                <SafeImage
+                  alt={userDisplayName}
+                  className="w-8 h-8 rounded-full object-cover ring-1 ring-outline-variant/40"
+                  fallbackIcon="person"
+                  src={userAvatarSrc}
+                />
+              </Link>
+            ) : (
+              <Link
+                aria-label="Sign In"
+                className="h-9 px-3 rounded-lg bg-primary text-on-primary hover:bg-secondary font-label-md text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all active:scale-95 shrink-0"
+                to="/auth"
+              >
+                <span aria-hidden="true" className="material-symbols-outlined text-[16px]">
+                  login
+                </span>
+                <span>Sign In</span>
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -188,21 +240,46 @@ export function MobileTabShell({ pageLabel, children }: MobileTabShellProps) {
             </button>
           </div>
 
-          <div className="px-gutter-sm py-space-sm flex items-center gap-space-md bg-surface-container-low mx-gutter-sm rounded-xl">
-            <SafeImage
-              alt={authSession.isAuthenticated ? authSession.userName : profile.drawerDisplayName}
-              className="w-10 h-10 rounded-full object-cover shrink-0"
-              src={USER_AVATAR_URL}
-            />
-            <div className="flex flex-col min-w-0 flex-1">
-              <span className="font-label-lg text-label-lg text-on-surface truncate">
-                {authSession.isAuthenticated ? authSession.userName : profile.drawerDisplayName}
-              </span>
-              <span className="font-label-sm text-label-sm text-on-surface-variant truncate">
-                {authSession.role === 'ADMIN' ? 'Platform Administrator' : 'Executive Candidate'}
-              </span>
+          {authSession.isAuthenticated ? (
+            <div className="px-gutter-sm py-space-sm flex items-center gap-space-md bg-surface-container-low mx-gutter-sm rounded-xl">
+              <SafeImage
+                alt={userDisplayName}
+                className="w-10 h-10 rounded-full object-cover shrink-0 ring-1 ring-outline-variant/40"
+                fallbackIcon="person"
+                src={userAvatarSrc}
+              />
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="font-label-lg text-label-lg text-on-surface truncate">
+                  {userDisplayName}
+                </span>
+                <span className="font-label-sm text-label-sm text-on-surface-variant truncate">
+                  {authSession.role === 'ADMIN'
+                    ? 'Platform Administrator'
+                    : authSession.role === 'EMPLOYER'
+                      ? `Admin (Job Poster) • ${authSession.companyName || profile.companyName || 'Employer'}`
+                      : 'Executive Candidate'}
+                </span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <Link
+              className="px-gutter-sm py-space-sm flex items-center gap-space-md bg-surface-container-low hover:bg-surface-container mx-gutter-sm rounded-xl transition-colors"
+              onClick={() => setDrawerOpen(false)}
+              to="/auth"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[20px]">person</span>
+              </div>
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="font-label-lg text-label-lg text-primary font-semibold truncate">
+                  Sign In to JobConnect
+                </span>
+                <span className="font-label-sm text-label-sm text-on-surface-variant truncate">
+                  Sync profile, resumes &amp; applications
+                </span>
+              </div>
+            </Link>
+          )}
 
           <nav className="flex-1 overflow-y-auto px-gutter-sm py-space-md flex flex-col gap-space-2xs">
             {navItems.map((item) => {
@@ -226,6 +303,21 @@ export function MobileTabShell({ pageLabel, children }: MobileTabShellProps) {
             })}
 
             <div className="h-px bg-outline-variant/30 my-space-xs" />
+
+            {(authSession.role === 'ADMIN' || IS_MOCK_MODE) && (
+              <Link
+                className={`flex items-center gap-space-md px-gutter-sm h-12 rounded-lg transition-all font-label-lg text-label-lg ${
+                  isActive('/employer/dashboard')
+                    ? 'bg-primary-container text-on-primary font-semibold'
+                    : 'text-secondary hover:bg-surface-container'
+                }`}
+                onClick={() => setDrawerOpen(false)}
+                to="/employer/dashboard"
+              >
+                <span className="material-symbols-outlined text-[22px]">business_center</span>
+                <span>Job Poster Hub</span>
+              </Link>
+            )}
 
             {(authSession.role === 'ADMIN' || IS_MOCK_MODE) && (
               <Link

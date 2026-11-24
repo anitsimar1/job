@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { JobPosting } from '../../types';
 import { SafeImage } from '../common/SafeImage';
@@ -14,21 +14,34 @@ export function JobCard({ job, variant = 'search' }: JobCardProps) {
   const navigate = useNavigate();
   const { savedJobIds, appliedJobIds, toggleSaveJob, quickApplyJob } = useApp();
   const [applying, setApplying] = useState(false);
+  const applyingRef = useRef(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const isSaved = savedJobIds.includes(job.id);
   const isApplied = appliedJobIds.includes(job.id);
 
   const handleQuickApply = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isApplied || applying) return;
+    if (isApplied || applying || applyingRef.current) return;
+    applyingRef.current = true;
     setApplying(true);
     try {
       const result = await quickApplyJob(job);
-      if (result === 'auth_required') {
+      if (mountedRef.current && result === 'auth_required') {
         navigate('/auth', { state: { from: location.pathname } });
       }
     } finally {
-      setApplying(false);
+      applyingRef.current = false;
+      if (mountedRef.current) {
+        setApplying(false);
+      }
     }
   };
 
@@ -145,6 +158,7 @@ export function JobCard({ job, variant = 'search' }: JobCardProps) {
             className={`font-label-md text-label-md font-bold flex items-center gap-1 ${
               isApplied ? 'text-tertiary-container' : 'text-secondary hover:underline'
             }`}
+            disabled={applying || isApplied}
             onClick={handleQuickApply}
             type="button"
           >

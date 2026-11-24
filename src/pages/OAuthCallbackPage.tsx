@@ -44,6 +44,8 @@ export function OAuthCallbackPage() {
         const target = mockSession.isAuthenticated
           ? mockSession.role === 'ADMIN'
             ? '/admin'
+            : mockSession.role === 'EMPLOYER'
+            ? '/employer/dashboard'
             : '/dashboard'
           : '/';
         setStatus(mockSession.isAuthenticated ? 'authenticated' : 'unauthenticated');
@@ -64,7 +66,12 @@ export function OAuthCallbackPage() {
         if (!active) return;
 
         if (session?.isAuthenticated) {
-          const destination = session.role === 'ADMIN' ? '/admin' : '/dashboard';
+          const destination =
+            session.role === 'ADMIN'
+              ? '/admin'
+              : session.role === 'EMPLOYER'
+              ? '/employer/dashboard'
+              : '/dashboard';
           setStatus('authenticated');
           setStatusMessage(`Signed in as ${session.userName}. Redirecting to your workspace...`);
           showToast('Signed in with Google', 'verified');

@@ -36,6 +36,7 @@ import {
   SpringApplicationDto,
   userService,
 } from '../services';
+import { avatarStorage } from '../utils/avatarStorage';
 
 interface ToastState {
   visible: boolean;
@@ -84,6 +85,9 @@ interface AppContextValue {
     status: BackendApplicationStatus
   ) => Promise<void>;
   refreshAdminData: () => Promise<void>;
+  refreshJobs: () => Promise<void>;
+  upsertPostedJob: (job: JobPosting) => void;
+  removePostedJob: (jobId: string) => void;
 }
 
 const AppContext = createContext<AppContextValue | undefined>(undefined);
@@ -182,6 +186,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ? INITIAL_PROFILE
       : {
           ...INITIAL_PROFILE,
+          avatar: '',
           resumes: [],
         }
   );
@@ -302,20 +307,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
 
     if (authSession.isAuthenticated && !authSession.isDemoMode) {
-      Promise.allSettled([
-        userService.getCurrentProfile(),
-        applicationService.listApplications(),
-      ]).then(([profileRes, appsRes]) => {
-        if (!mounted) return;
-        if (profileRes.status === 'fulfilled') setProfile(profileRes.value);
-        if (appsRes.status === 'fulfilled') setApplications(appsRes.value);
-      });
+      userService
+        .getCurrentProfile()
+        .then((loadedProfile) => {
+          if (mounted) setProfile(loadedProfile);
+        })
+        .catch(() => {
+          // Handled cleanly if backend is offline
+        });
+
+      if (authSession.role !== 'EMPLOYER') {
+        applicationService
+          .listApplications()
+          .then((apps) => {
+            if (mounted) setApplications(apps);
+          })
+          .catch(() => {
+            // Handled cleanly if backend is offline
+          });
+      } else {
+        setApplications([]);
+      }
     }
 
     return () => {
       mounted = false;
     };
-  }, [authSession.isAuthenticated, authSession.isDemoMode]);
+  }, [authSession.isAuthenticated, authSession.isDemoMode, authSession.role]);
 
   const refreshAdminData = useCallback(async () => {
     try {
@@ -362,6 +380,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!IS_MOCK_MODE && !authSession.isAuthenticated) {
         showToast('Please sign in to apply for jobs', 'lock');
         return 'auth_required';
+      }
+      if (authSession.role === 'EMPLOYER') {
+        showToast('Job poster accounts manage listings rather than applying.', 'business_center');
+        return 'error';
       }
       if (applications.some((a) => a.jobId === job.id && a.status !== 'archived')) {
         showToast(`Already applied to ${job.company}`, 'info');
@@ -419,7 +441,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return 'error';
       }
     },
-    [applications, authSession.isAuthenticated, profile, showToast]
+    [applications, authSession.isAuthenticated, authSession.role, profile, showToast]
   );
 
   const submitApplication = useCallback(
@@ -427,6 +449,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!IS_MOCK_MODE && !authSession.isAuthenticated) {
         const message = 'Please sign in to submit your application';
         showToast(message, 'lock');
+        throw new Error(message);
+      }
+      if (authSession.role === 'EMPLOYER') {
+        const message = 'Job poster accounts manage listings rather than applying.';
+        showToast(message, 'business_center');
         throw new Error(message);
       }
       try {
@@ -469,7 +496,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         throw apiError;
       }
     },
-    [authSession.isAuthenticated, profile.resumes, showToast]
+    [authSession.isAuthenticated, authSession.role, profile.resumes, showToast]
   );
 
   const withdrawApplication = useCallback(
@@ -694,10 +721,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       try {
         const session = await authService.login(payload);
         if (!IS_MOCK_MODE) {
+          const resolvedAvatar =
+            avatarStorage.get(session.userEmail) || session.profileImage || '';
           setProfile((prev) => ({
             ...prev,
             fullName: session.userName || prev.fullName,
             email: session.userEmail || prev.email,
+            companyName: session.companyName ?? prev.companyName,
+            avatar: resolvedAvatar,
             resumes: [],
           }));
         }
@@ -720,16 +751,48 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     async (payload: RegisterPayload) => {
       try {
         const session = await authService.register(payload);
+        const isEmployer = session.role === 'EMPLOYER';
+        const normalizedRoles = isEmployer
+          ? []
+          : payload.targetRoles?.map((r) => r.trim()).filter(Boolean);
+        const nextProfile: CandidateProfile = {
+          ...profile,
+          fullName: payload.fullName || profile.fullName,
+          email: payload.email || profile.email,
+          phone: payload.phone || profile.phone,
+          companyName: session.companyName ?? payload.companyName ?? profile.companyName,
+          avatar: IS_MOCK_MODE
+            ? profile.avatar
+            : avatarStorage.get(payload.email) || session.profileImage || '',
+          targetRoles:
+            !isEmployer && normalizedRoles && normalizedRoles.length > 0
+              ? normalizedRoles
+              : profile.targetRoles,
+          resumes: IS_MOCK_MODE ? profile.resumes : [],
+        };
+
+        let finalProfile = nextProfile;
+        if (!IS_MOCK_MODE && !isEmployer && normalizedRoles && normalizedRoles.length > 0) {
+          try {
+            const synced = await userService.updateProfile(nextProfile);
+            if (synced && typeof synced === 'object') {
+              finalProfile = synced;
+            }
+          } catch {
+            // Keep selected roles in local state if profile sync encounters a transient error
+          }
+        }
+
+        setProfile(finalProfile);
         setAuthSession(session);
-        setProfile((prev) => ({
-          ...prev,
-          fullName: payload.fullName || prev.fullName,
-          email: payload.email || prev.email,
-          phone: payload.phone || prev.phone,
-          resumes: IS_MOCK_MODE ? prev.resumes : [],
-        }));
         showToast(
-          session.isDemoMode ? 'Candidate account created (Preview Mode)' : 'Account registered',
+          session.isDemoMode
+            ? isEmployer
+              ? 'Job Poster account created (Preview Mode)'
+              : 'Candidate account created (Preview Mode)'
+            : isEmployer
+              ? 'Job Poster account registered'
+              : 'Account registered',
           'verified'
         );
         return session;
@@ -739,7 +802,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         throw apiError;
       }
     },
-    [showToast]
+    [profile, showToast]
   );
 
   const logout = useCallback(async () => {
@@ -747,6 +810,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAuthSession((prev) => ({
       ...prev,
       isAuthenticated: false,
+      companyName: undefined,
+      profileImage: undefined,
       accessToken: undefined,
       refreshToken: undefined,
       tokenExpiresAt: undefined,
@@ -754,7 +819,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!IS_MOCK_MODE) {
       setApplications([]);
       setSavedJobIds([]);
-      setProfile({ ...INITIAL_PROFILE, resumes: [] });
+      setProfile({ ...INITIAL_PROFILE, companyName: undefined, avatar: '', resumes: [] });
     }
     showToast('Signed out of session', 'logout');
   }, [showToast]);
@@ -842,6 +907,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [showToast]
   );
 
+  const refreshJobs = useCallback(async () => {
+    if (IS_MOCK_MODE) return;
+    try {
+      const liveJobs = await jobService.listJobs({ sortBy: 'Latest Added' });
+      if (Array.isArray(liveJobs)) {
+        setJobs(liveJobs);
+      }
+    } catch {
+      // Handled cleanly if backend is offline
+    }
+  }, []);
+
+  const upsertPostedJob = useCallback((job: JobPosting) => {
+    setJobs((prev) => {
+      const idx = prev.findIndex((j) => j.id === job.id);
+      if (idx === -1) return [job, ...prev];
+      const next = [...prev];
+      next[idx] = job;
+      return next;
+    });
+  }, []);
+
+  const removePostedJob = useCallback((jobId: string) => {
+    setJobs((prev) => prev.filter((j) => j.id !== jobId));
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
@@ -880,6 +971,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         deleteJobAdmin,
         updateAdminApplicationStatus,
         refreshAdminData,
+        refreshJobs,
+        upsertPostedJob,
+        removePostedJob,
       }}
     >
       {children}

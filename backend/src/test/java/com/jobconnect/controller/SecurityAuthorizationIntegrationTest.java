@@ -43,6 +43,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -102,6 +103,18 @@ class SecurityAuthorizationIntegrationTest {
                 .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("HttpOnly")))
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.role").value("ROLE_JOB_SEEKER"));
+    }
+
+    @Test
+    void registerEndpoint_allowsCorsPreflightFromAiStudioPreviewOrigin() throws Exception {
+        String previewOrigin = "https://ais-dev-gipkcu5tiwi55u7jym4mob-898921356034.asia-northeast1.run.app";
+        mockMvc.perform(options("/api/auth/register")
+                        .header(HttpHeaders.ORIGIN, previewOrigin)
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "content-type"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, previewOrigin))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"));
     }
 
     @Test
@@ -279,5 +292,86 @@ class SecurityAuthorizationIntegrationTest {
                             {"decision": "accepted"}
                             """))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void publicJobById_returns400OnNonNumericId() throws Exception {
+        mockMvc.perform(get("/api/jobs/not-a-number"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_PARAMETER"));
+    }
+
+    @Test
+    @WithMockUser(username = "poster@acme.io", roles = "EMPLOYER")
+    void employerEndpoints_allowJobPostingClosingAndViewingApplicantsWhileBlockingApply() throws Exception {
+        JobDto created = new JobDto(
+                9L, "acme-staff", "Staff Engineer", "Acme", null, null, null, false,
+                "Remote", "Remote", "Build cloud", "6+ years", "$180k", 180, 210,
+                "Full-time", "Senior", "6+", "Backend", List.of("Java"), 90, 0, false,
+                JobStatus.OPEN, Instant.now()
+        );
+        JobDto closed = new JobDto(
+                9L, "acme-staff", "Staff Engineer", "Acme", null, null, null, false,
+                "Remote", "Remote", "Build cloud", "6+ years", "$180k", 180, 210,
+                "Full-time", "Senior", "6+", "Backend", List.of("Java"), 90, 1, false,
+                JobStatus.CLOSED, Instant.now()
+        );
+        when(jobService.createJob(any(), eq("poster@acme.io"))).thenReturn(created);
+        when(jobService.getJobsByPoster("poster@acme.io")).thenReturn(List.of(created));
+        when(jobService.updateJobStatus(9L, JobStatus.CLOSED, "poster@acme.io", false)).thenReturn(closed);
+        when(applicationService.getApplicationsForJob(9L, "poster@acme.io", false)).thenReturn(List.of());
+
+        mockMvc.perform(post("/api/jobs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "title": "Staff Engineer",
+                              "company": "Acme",
+                              "location": "Remote",
+                              "description": "Build cloud",
+                              "requirements": "6+ years",
+                              "salary": "$180k",
+                              "employmentType": "Full-time",
+                              "experience": "Senior"
+                            }
+                            """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.id").value(9));
+
+        mockMvc.perform(get("/api/jobs/my"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].title").value("Staff Engineer"));
+
+        mockMvc.perform(patch("/api/jobs/9/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {"status": "CLOSED"}
+                            """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("CLOSED"));
+
+        mockMvc.perform(get("/api/jobs/9/applications"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/applications")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {"jobId": 9, "resumeId": null, "coverLetter": "Not allowed"}
+                            """))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "seeker@techmail.io", roles = "JOB_SEEKER")
+    void employerOnlyJobManagementEndpoints_forbidJobSeekerRole() throws Exception {
+        mockMvc.perform(get("/api/jobs/my"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(patch("/api/jobs/9/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {"status": "CLOSED"}
+                            """))
+                .andExpect(status().isForbidden());
     }
 }

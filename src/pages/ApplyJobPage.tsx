@@ -16,12 +16,22 @@ export function ApplyJobPage() {
   const defaultResume = profile.resumes.find((r) => r.isDefault) || profile.resumes[0];
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dirtyPersonalRef = useRef(false);
+  const submitLockRef = useRef(false);
+  const mountedRef = useRef(true);
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [editingAutoFill, setEditingAutoFill] = useState(false);
   const [fetchedJob, setFetchedJob] = useState<JobPosting | undefined>(undefined);
   const [loadingJob, setLoadingJob] = useState(false);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const [formData, setFormData] = useState<ApplyFormData>({
     fullName: profile.fullName,
@@ -101,14 +111,17 @@ export function ApplyJobPage() {
     );
   }
 
-  if (!job) {
+  if (!job || (job.status && job.status !== 'OPEN')) {
+    const isClosed = Boolean(job && job.status && job.status !== 'OPEN');
     return (
       <StackShell backTo="/jobs" title="Apply For Job">
         <div className="px-gutter-sm py-16 flex flex-col items-center justify-center gap-4 text-center">
           <div className="w-14 h-14 rounded-full bg-surface-container-high flex items-center justify-center text-secondary">
             <span className="material-symbols-outlined text-[28px]">work_off</span>
           </div>
-          <h2 className="font-headline-sm font-bold text-on-surface">Job listing not found</h2>
+          <h2 className="font-headline-sm font-bold text-on-surface">
+            {isClosed ? 'Applications Closed' : 'Job listing not found'}
+          </h2>
           <p className="font-body-sm text-on-surface-variant max-w-xs">
             This role could not be found or is no longer open for applications.
           </p>
@@ -155,20 +168,32 @@ export function ApplyJobPage() {
   };
 
   const handleFinalSubmit = async () => {
+    if (submitLockRef.current || submitting) return;
     if (!IS_MOCK_MODE && !authSession.isAuthenticated) {
       showToast('Please sign in to submit your application', 'lock');
       navigate('/auth', { state: { from: location.pathname } });
       return;
     }
+    submitLockRef.current = true;
+    setSubmitError(null);
     setSubmitting(true);
     try {
       await submitApplication(job, formData);
+      if (!mountedRef.current) return;
       setStep(3);
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch {
-      // Error toast is surfaced by AppContext via normalizeApiError
+    } catch (err) {
+      if (!mountedRef.current) return;
+      const msg =
+        err && typeof err === 'object' && 'message' in err
+          ? String((err as { message: unknown }).message)
+          : 'Unable to submit application. Please try again.';
+      setSubmitError(msg);
     } finally {
-      setSubmitting(false);
+      submitLockRef.current = false;
+      if (mountedRef.current) {
+        setSubmitting(false);
+      }
     }
   };
 
@@ -496,7 +521,7 @@ export function ApplyJobPage() {
                         {!selectedResume && <span>Upload</span>}
                       </button>
                       <input
-                        accept=".pdf,.doc,.docx"
+                        accept=".pdf,.docx"
                         className="hidden"
                         onChange={handleResumeSwap}
                         ref={fileInputRef}
@@ -732,6 +757,15 @@ export function ApplyJobPage() {
 
           {step === 2 && (
             <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-4">
+              {submitError && (
+                <div
+                  className="p-3 rounded-lg bg-error-container text-on-error-container font-body-sm text-xs flex items-center gap-2"
+                  role="alert"
+                >
+                  <span className="material-symbols-outlined text-[18px] shrink-0">error</span>
+                  <span>{submitError}</span>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <h3 className="font-headline-sm font-bold text-on-surface">
                   Confirm Application Packet

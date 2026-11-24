@@ -5,6 +5,7 @@ import com.jobconnect.dto.JobRequest;
 import com.jobconnect.entity.Job;
 import com.jobconnect.entity.JobStatus;
 import com.jobconnect.entity.User;
+import com.jobconnect.repository.ApplicationRepository;
 import com.jobconnect.repository.JobRepository;
 import com.jobconnect.repository.SavedJobRepository;
 import com.jobconnect.repository.UserRepository;
@@ -19,11 +20,13 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,6 +37,7 @@ class JobServiceTest {
     @Mock private JobRepository jobRepository;
     @Mock private UserRepository userRepository;
     @Mock private SavedJobRepository savedJobRepository;
+    @Mock private ApplicationRepository applicationRepository;
     @Spy private DtoMapper dtoMapper = new DtoMapper();
 
     @InjectMocks
@@ -110,5 +114,41 @@ class JobServiceTest {
         assertThat(page.getTotalElements()).isEqualTo(1);
         assertThat(page.getContent().get(0).company()).isEqualTo("Vercel");
         verify(jobRepository).findAll(any(Specification.class), any(Pageable.class));
+    }
+
+    @Test
+    void updateJobStatus_allowsOwnerToCloseAndReopenAndBlocksOtherPoster() {
+        User owner = new User();
+        owner.setId(10L);
+        owner.setEmail("hiring@acme.io");
+        owner.setFullName("Hiring Lead");
+
+        Job job = new Job();
+        job.setId(77L);
+        job.setTitle("Staff Engineer");
+        job.setCompany("Acme");
+        job.setLocation("Remote");
+        job.setWorkplace("Remote");
+        job.setDescription("Lead systems");
+        job.setRequirements("8+ yrs");
+        job.setSalary("$200k");
+        job.setEmploymentType("Full-time");
+        job.setExperience("Senior");
+        job.setStatus(JobStatus.OPEN);
+        job.setCreatedBy(owner);
+
+        when(jobRepository.findById(77L)).thenReturn(Optional.of(job));
+        when(jobRepository.save(any(Job.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(applicationRepository.countByJobId(77L)).thenReturn(4L);
+
+        JobDto closed = jobService.updateJobStatus(77L, JobStatus.CLOSED, "hiring@acme.io", false);
+        assertThat(closed.status()).isEqualTo(JobStatus.CLOSED);
+        assertThat(closed.applicantsCount()).isEqualTo(4);
+
+        JobDto reopened = jobService.updateJobStatus(77L, JobStatus.OPEN, "hiring@acme.io", false);
+        assertThat(reopened.status()).isEqualTo(JobStatus.OPEN);
+
+        assertThatThrownBy(() -> jobService.updateJobStatus(77L, JobStatus.CLOSED, "intruder@other.io", false))
+                .isInstanceOf(AccessDeniedException.class);
     }
 }

@@ -45,5 +45,11 @@ public record UpdateProfileRequest(
     String linkedinUrl,
 
     @Size(max = 255)
-    String portfolioUrl
+    String portfolioUrl,
+
+    @Size(max = 500000)
+    String profileImage,
+
+    @Size(max = 160)
+    String companyName
 ) {}

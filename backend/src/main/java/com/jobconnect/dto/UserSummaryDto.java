@@ -13,5 +13,21 @@ public record UserSummaryDto(
     boolean enabled,
     Instant createdAt,
     String authProvider,
-    boolean emailVerified
-) {}
+    boolean emailVerified,
+    String companyName
+) {
+    public UserSummaryDto(
+        Long id,
+        String fullName,
+        String email,
+        String phone,
+        String profileImage,
+        Set<String> roles,
+        boolean enabled,
+        Instant createdAt,
+        String authProvider,
+        boolean emailVerified
+    ) {
+        this(id, fullName, email, phone, profileImage, roles, enabled, createdAt, authProvider, emailVerified, null);
+    }
+}

@@ -34,7 +34,7 @@ public class User {
     @Column(length = 40)
     private String phone;
 
-    @Column(name = "profile_image", length = 512)
+    @Column(name = "profile_image", columnDefinition = "MEDIUMTEXT")
     private String profileImage;
 
     @Enumerated(EnumType.STRING)
@@ -49,6 +49,9 @@ public class User {
 
     @Column(length = 160)
     private String title;
+
+    @Column(name = "company_name", length = 160)
+    private String companyName;
 
     @Column(length = 160)
     private String location;
@@ -134,6 +137,9 @@ public class User {
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
+
+    public String getCompanyName() { return companyName; }
+    public void setCompanyName(String companyName) { this.companyName = companyName; }
 
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }

@@ -1,10 +1,26 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { MobileTabShell } from '../components/layout/MobileTabShell';
 import { SafeImage } from '../components/common/SafeImage';
 import { useApp } from '../context/AppContext';
 
+const CAREER_ROLE_PRESETS = [
+  'Frontend Engineer',
+  'Full Stack Engineer',
+  'Backend Engineer',
+  'Product Designer',
+  'DevOps & Infra',
+  'Data Lead',
+  'Staff Frontend',
+  'Principal UI Architect',
+  'Design Systems Lead',
+];
+
+const WORK_ARRANGEMENT_PRESETS = ['Remote', 'Hybrid', 'On-site'];
+
 export function ProfileResumePage() {
   const {
+    authSession,
     profile,
     updateProfile,
     uploadResume,
@@ -23,6 +39,11 @@ export function ProfileResumePage() {
   const [editingPrefs, setEditingPrefs] = useState(false);
   const [prefsSalaryMin, setPrefsSalaryMin] = useState(profile.desiredSalaryMin / 1000);
   const [prefsSalaryMax, setPrefsSalaryMax] = useState(profile.desiredSalaryMax / 1000);
+  const [selectedTargetRoles, setSelectedTargetRoles] = useState<string[]>(profile.targetRoles);
+  const [selectedWorkArrangements, setSelectedWorkArrangements] = useState<string[]>(
+    profile.workArrangements
+  );
+  const [customTargetRole, setCustomTargetRole] = useState('');
   const [addingRole, setAddingRole] = useState(false);
   const [newRoleTitle, setNewRoleTitle] = useState('');
   const [newRoleOrg, setNewRoleOrg] = useState('');
@@ -34,18 +55,96 @@ export function ProfileResumePage() {
   const resumeInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
+  const isEmployer = authSession.role === 'EMPLOYER';
+  const [companyNameInput, setCompanyNameInput] = useState(
+    profile.companyName || authSession.companyName || ''
+  );
+
+  useEffect(() => {
+    setCompanyNameInput(profile.companyName || authSession.companyName || '');
+  }, [authSession.companyName, profile.companyName]);
+
+  useEffect(() => {
+    if (!editingPrefs) {
+      setPrefsSalaryMin(profile.desiredSalaryMin / 1000);
+      setPrefsSalaryMax(profile.desiredSalaryMax / 1000);
+      setSelectedTargetRoles(profile.targetRoles);
+      setSelectedWorkArrangements(profile.workArrangements);
+    }
+  }, [
+    editingPrefs,
+    profile.desiredSalaryMax,
+    profile.desiredSalaryMin,
+    profile.targetRoles,
+    profile.workArrangements,
+  ]);
+
   const primaryResume = profile.resumes.find((r) => r.isDefault) || profile.resumes[0];
   const secondaryResumes = profile.resumes.filter((r) => r.id !== primaryResume?.id);
+
+  const allRoleOptions = Array.from(
+    new Set([...CAREER_ROLE_PRESETS, ...selectedTargetRoles])
+  );
+  const allWorkArrangementOptions = Array.from(
+    new Set([...WORK_ARRANGEMENT_PRESETS, ...selectedWorkArrangements])
+  );
+
+  const toggleTargetRole = (role: string) => {
+    setSelectedTargetRoles((prev) =>
+      prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
+    );
+  };
+
+  const toggleWorkArrangement = (arrangement: string) => {
+    setSelectedWorkArrangements((prev) =>
+      prev.includes(arrangement)
+        ? prev.filter((item) => item !== arrangement)
+        : [...prev, arrangement]
+    );
+  };
+
+  const handleAddCustomTargetRole = () => {
+    const trimmed = customTargetRole.trim();
+    if (!trimmed) return;
+    setSelectedTargetRoles((prev) =>
+      prev.some((r) => r.toLowerCase() === trimmed.toLowerCase()) ? prev : [...prev, trimmed]
+    );
+    setCustomTargetRole('');
+  };
+
+  const handleSavePreferences = async () => {
+    await updateProfile({
+      ...profile,
+      targetRoles: selectedTargetRoles,
+      workArrangements: selectedWorkArrangements,
+      desiredSalaryMin: prefsSalaryMin * 1000,
+      desiredSalaryMax: prefsSalaryMax * 1000,
+    });
+    setEditingPrefs(false);
+  };
+
+  const handleCancelPreferences = () => {
+    setPrefsSalaryMin(profile.desiredSalaryMin / 1000);
+    setPrefsSalaryMax(profile.desiredSalaryMax / 1000);
+    setSelectedTargetRoles(profile.targetRoles);
+    setSelectedWorkArrangements(profile.workArrangements);
+    setCustomTargetRole('');
+    setEditingPrefs(false);
+  };
 
   const handleSaveChanges = async () => {
     setSaving(true);
     await new Promise((r) => setTimeout(r, 500));
     await updateProfile({
       ...profile,
+      companyName: isEmployer ? companyNameInput.trim() || profile.companyName : profile.companyName,
+      targetRoles: selectedTargetRoles,
+      workArrangements: selectedWorkArrangements,
       desiredSalaryMin: prefsSalaryMin * 1000,
       desiredSalaryMax: prefsSalaryMax * 1000,
     });
     setSaving(false);
+    setEditingPrefs(false);
     setSavedSuccess(true);
     window.setTimeout(() => setSavedSuccess(false), 2000);
   };
@@ -75,13 +174,54 @@ export function ProfileResumePage() {
     setAddingRole(false);
   };
 
+  const compressAvatarDataUrl = (rawDataUrl: string): Promise<string> =>
+    new Promise((resolve) => {
+      if (typeof Image === 'undefined' || typeof document === 'undefined') {
+        resolve(rawDataUrl);
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const maxDim = 160;
+          const scale = Math.min(1, maxDim / Math.max(img.width || maxDim, img.height || maxDim));
+          const width = Math.max(1, Math.round((img.width || maxDim) * scale));
+          const height = Math.max(1, Math.round((img.height || maxDim) * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(rawDataUrl);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.85);
+          resolve(compressed && compressed.startsWith('data:image/') ? compressed : rawDataUrl);
+        } catch {
+          resolve(rawDataUrl);
+        }
+      };
+      img.onerror = () => resolve(rawDataUrl);
+      img.src = rawDataUrl;
+    });
+
   const handleAvatarSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select a valid image file (PNG, JPG, WebP)', 'error');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Profile photo must be 5MB or smaller', 'error');
+      return;
+    }
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       if (typeof reader.result === 'string') {
-        updateProfile({ ...profile, avatar: reader.result });
+        const avatarDataUrl = await compressAvatarDataUrl(reader.result);
+        await updateProfile({ ...profile, avatar: avatarDataUrl });
       }
     };
     reader.readAsDataURL(file);
@@ -187,11 +327,13 @@ export function ProfileResumePage() {
                     <span className="material-symbols-outlined text-[13px] text-secondary">
                       verified
                     </span>
-                    <span>Verified Pro</span>
+                    <span>{isEmployer ? 'Verified Job Poster' : 'Verified Pro'}</span>
                   </span>
                 </div>
                 <p className="font-body-md text-body-md text-on-surface-variant font-medium mt-0.5">
-                  {profile.title}
+                  {isEmployer
+                    ? profile.companyName || authSession.companyName || 'Hiring Organization'
+                    : profile.title}
                 </p>
                 <div className="flex flex-wrap items-center gap-y-1 gap-x-space-md mt-space-2xs text-on-surface-variant font-body-sm text-body-sm">
                   <span className="inline-flex items-center gap-1">
@@ -217,6 +359,43 @@ export function ProfileResumePage() {
             </div>
           </div>
 
+          {isEmployer ? (
+            <div className="w-full bg-surface-container-lowest rounded-xl shadow-sm p-space-md space-y-space-md">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold flex items-center gap-space-xs">
+                    <span className="material-symbols-outlined text-secondary text-[22px]">
+                      apartment
+                    </span>
+                    <span>Organization &amp; Hiring Settings</span>
+                  </h2>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant">
+                    Application notifications are sent automatically to {authSession.userEmail || profile.email}.
+                  </p>
+                </div>
+                <Link
+                  className="inline-flex items-center gap-1.5 bg-primary text-on-primary hover:bg-secondary px-space-sm py-2 rounded-lg font-label-sm text-label-sm font-semibold shadow-sm"
+                  to="/employer/dashboard"
+                >
+                  <span className="material-symbols-outlined text-[18px]">business_center</span>
+                  <span>Open Poster Dashboard</span>
+                </Link>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="font-label-md text-on-surface font-semibold">
+                  Company / Organization Name
+                </label>
+                <input
+                  className="h-11 px-3 rounded-lg bg-surface-container-low border border-outline-variant/50 text-body-md outline-none focus:border-primary"
+                  onChange={(e) => setCompanyNameInput(e.target.value)}
+                  placeholder="Acme Cloud Inc."
+                  type="text"
+                  value={companyNameInput}
+                />
+              </div>
+            </div>
+          ) : (
+            <>
           {/* Resumes & Documents */}
           <div className="w-full bg-surface-container-lowest rounded-xl shadow-sm p-space-md space-y-space-md">
             <div className="flex items-center justify-between gap-2">
@@ -241,7 +420,7 @@ export function ProfileResumePage() {
                 <span className="sm:hidden">Upload</span>
               </button>
               <input
-                accept=".pdf,.doc,.docx"
+                accept=".pdf,.docx"
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
@@ -405,27 +584,50 @@ export function ProfileResumePage() {
 
           {/* Target Career Preferences */}
           <div className="w-full bg-surface-container-lowest rounded-xl shadow-sm p-space-md space-y-space-md">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-space-xs">
                 <span className="material-symbols-outlined text-secondary text-[22px]">target</span>
                 <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">
                   Target Career Preferences
                 </h2>
               </div>
-              <button
-                className="font-label-sm text-label-sm text-secondary hover:underline font-semibold flex items-center gap-1"
-                onClick={() => setEditingPrefs((p) => !p)}
-                type="button"
-              >
-                <span className="material-symbols-outlined text-[16px]">
-                  {editingPrefs ? 'check' : 'edit'}
-                </span>
-                <span>{editingPrefs ? 'Done' : 'Edit'}</span>
-              </button>
+              {editingPrefs ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    className="px-2.5 py-1 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm font-semibold"
+                    onClick={handleCancelPreferences}
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="px-3 py-1 rounded-lg bg-primary text-on-primary hover:bg-secondary font-label-sm text-label-sm font-semibold flex items-center gap-1"
+                    onClick={handleSavePreferences}
+                    type="button"
+                  >
+                    <span aria-hidden="true" className="material-symbols-outlined text-[15px]">
+                      check
+                    </span>
+                    <span>Save Preferences</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  aria-label="Edit Target Career Preferences"
+                  className="font-label-sm text-label-sm text-secondary hover:underline font-semibold flex items-center gap-1"
+                  onClick={() => setEditingPrefs(true)}
+                  type="button"
+                >
+                  <span aria-hidden="true" className="material-symbols-outlined text-[16px]">
+                    edit
+                  </span>
+                  <span>Edit</span>
+                </button>
+              )}
             </div>
 
             {editingPrefs && (
-              <div className="p-3 rounded-xl bg-surface-container-low space-y-2">
+              <div className="p-3 rounded-xl bg-surface-container-low space-y-3 border border-outline-variant/40">
                 <div className="flex justify-between font-label-sm text-on-surface">
                   <span>Desired Base Range ($k)</span>
                   <span className="font-bold text-primary">
@@ -457,20 +659,93 @@ export function ProfileResumePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-space-sm">
               <div className="bg-surface-container-low p-space-sm rounded-lg space-y-space-xs">
-                <div className="flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
-                  <span className="material-symbols-outlined text-[16px] text-secondary">work</span>
-                  <span>Target Roles</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {profile.targetRoles.map((role) => (
-                    <span
-                      key={role}
-                      className="bg-surface-container-lowest text-on-surface font-label-sm text-label-sm px-space-xs py-1 rounded shadow-sm font-medium"
+                <div className="flex items-center justify-between gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
+                  <span className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px] text-secondary">work</span>
+                    <span>Target Roles</span>
+                  </span>
+                  {!editingPrefs && (
+                    <button
+                      className="text-secondary hover:underline text-[11px] font-semibold"
+                      onClick={() => setEditingPrefs(true)}
+                      type="button"
                     >
-                      {role}
-                    </span>
-                  ))}
+                      Select
+                    </button>
+                  )}
                 </div>
+                {editingPrefs ? (
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-1.5" role="group" aria-label="Target Roles">
+                      {allRoleOptions.map((role) => {
+                        const selected = selectedTargetRoles.includes(role);
+                        return (
+                          <button
+                            key={role}
+                            aria-pressed={selected}
+                            className={`font-label-sm text-label-sm px-2.5 py-1 rounded-lg border flex items-center gap-1 transition-all cursor-pointer ${
+                              selected
+                                ? 'bg-primary text-on-primary border-primary shadow-sm font-semibold'
+                                : 'bg-surface-container-lowest text-on-surface border-outline-variant hover:border-primary/50'
+                            }`}
+                            onClick={() => toggleTargetRole(role)}
+                            type="button"
+                          >
+                            <span
+                              aria-hidden="true"
+                              className="material-symbols-outlined text-[14px]"
+                              style={selected ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                            >
+                              {selected ? 'check_circle' : 'add'}
+                            </span>
+                            <span>{role}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        aria-label="Add custom target role"
+                        className="flex-1 min-w-0 h-8 px-2.5 rounded-lg bg-surface-container-lowest border border-outline-variant text-on-surface font-body-sm text-xs outline-none focus:border-primary"
+                        onChange={(e) => setCustomTargetRole(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddCustomTargetRole();
+                          }
+                        }}
+                        placeholder="Custom role..."
+                        type="text"
+                        value={customTargetRole}
+                      />
+                      <button
+                        className="h-8 px-2.5 rounded-lg bg-secondary text-on-secondary font-label-sm text-xs font-semibold disabled:opacity-50"
+                        disabled={!customTargetRole.trim()}
+                        onClick={handleAddCustomTargetRole}
+                        type="button"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedTargetRoles.length > 0 ? (
+                      selectedTargetRoles.map((role) => (
+                        <span
+                          key={role}
+                          className="bg-surface-container-lowest text-on-surface font-label-sm text-label-sm px-space-xs py-1 rounded shadow-sm font-medium"
+                        >
+                          {role}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="font-body-sm text-xs text-on-surface-variant">
+                        No target roles selected yet
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="bg-surface-container-low p-space-sm rounded-lg space-y-space-xs">
@@ -491,23 +766,64 @@ export function ProfileResumePage() {
               </div>
 
               <div className="bg-surface-container-low p-space-sm rounded-lg space-y-space-xs">
-                <div className="flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
-                  <span className="material-symbols-outlined text-[16px] text-primary">public</span>
-                  <span>Work Arrangements</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {profile.workArrangements.map((arr, idx) => (
-                    <span
-                      key={arr}
-                      className="bg-surface-container-lowest text-on-surface font-label-sm text-label-sm px-space-xs py-1 rounded shadow-sm font-medium flex items-center gap-1"
+                <div className="flex items-center justify-between gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
+                  <span className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px] text-primary">public</span>
+                    <span>Work Arrangements</span>
+                  </span>
+                  {!editingPrefs && (
+                    <button
+                      className="text-secondary hover:underline text-[11px] font-semibold"
+                      onClick={() => setEditingPrefs(true)}
+                      type="button"
                     >
-                      {idx === 0 && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-tertiary-fixed-dim" />
-                      )}
-                      {arr}
-                    </span>
-                  ))}
+                      Select
+                    </button>
+                  )}
                 </div>
+                {editingPrefs ? (
+                  <div className="flex flex-wrap gap-1.5" role="group" aria-label="Work Arrangements">
+                    {allWorkArrangementOptions.map((arr) => {
+                      const selected = selectedWorkArrangements.includes(arr);
+                      return (
+                        <button
+                          key={arr}
+                          aria-pressed={selected}
+                          className={`font-label-sm text-label-sm px-2.5 py-1 rounded-lg border flex items-center gap-1 transition-all cursor-pointer ${
+                            selected
+                              ? 'bg-primary text-on-primary border-primary shadow-sm font-semibold'
+                              : 'bg-surface-container-lowest text-on-surface border-outline-variant hover:border-primary/50'
+                          }`}
+                          onClick={() => toggleWorkArrangement(arr)}
+                          type="button"
+                        >
+                          <span
+                            aria-hidden="true"
+                            className="material-symbols-outlined text-[14px]"
+                            style={selected ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                          >
+                            {selected ? 'check_circle' : 'add'}
+                          </span>
+                          <span>{arr}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedWorkArrangements.map((arr, idx) => (
+                      <span
+                        key={arr}
+                        className="bg-surface-container-lowest text-on-surface font-label-sm text-label-sm px-space-xs py-1 rounded shadow-sm font-medium flex items-center gap-1"
+                      >
+                        {idx === 0 && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-tertiary-fixed-dim" />
+                        )}
+                        {arr}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -583,6 +899,8 @@ export function ProfileResumePage() {
               )}
             </div>
           </div>
+            </>
+          )}
 
           {/* Experience & Education */}
           <div className="w-full bg-surface-container-lowest rounded-xl shadow-sm p-space-md space-y-space-md">

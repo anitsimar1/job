@@ -5,7 +5,13 @@ import { IS_MOCK_MODE } from '../../services';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: Array<'JOB_SEEKER' | 'ADMIN'>;
+  allowedRoles?: Array<'JOB_SEEKER' | 'EMPLOYER' | 'ADMIN'>;
+}
+
+export function getHomeDashboardForRole(role: 'JOB_SEEKER' | 'EMPLOYER' | 'ADMIN'): string {
+  if (role === 'ADMIN') return '/admin';
+  if (role === 'EMPLOYER') return '/employer/dashboard';
+  return '/dashboard';
 }
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
@@ -35,7 +41,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     allowedRoles.length > 0 &&
     !allowedRoles.includes(authSession.role)
   ) {
-    return <Navigate replace to="/dashboard" />;
+    return <Navigate replace to={getHomeDashboardForRole(authSession.role)} />;
   }
 
   return <>{children}</>;

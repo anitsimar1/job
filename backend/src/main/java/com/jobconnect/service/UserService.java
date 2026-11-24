@@ -69,10 +69,33 @@ public class UserService {
         user.setGithubUrl(request.githubUrl());
         user.setLinkedinUrl(request.linkedinUrl());
         user.setPortfolioUrl(request.portfolioUrl());
+        if (request.companyName() != null) {
+            user.setCompanyName(request.companyName().trim());
+        }
+        if (request.profileImage() != null) {
+            String trimmedImage = request.profileImage().trim();
+            if (trimmedImage.isEmpty()) {
+                user.setProfileImage(null);
+            } else if (isValidProfileImage(trimmedImage)) {
+                user.setProfileImage(trimmedImage);
+            }
+        }
 
         User saved = userRepository.save(user);
         List<Resume> resumes = resumeRepository.findByUserIdOrderByUploadedAtDesc(saved.getId());
         return dtoMapper.toUserProfile(saved, resumes);
+    }
+
+    private boolean isValidProfileImage(String value) {
+        String lower = value.toLowerCase();
+        if (lower.startsWith("https://") || lower.startsWith("http://") || value.startsWith("/")) {
+            return value.length() <= 2048;
+        }
+        return lower.startsWith("data:image/png;base64,")
+                || lower.startsWith("data:image/jpeg;base64,")
+                || lower.startsWith("data:image/jpg;base64,")
+                || lower.startsWith("data:image/webp;base64,")
+                || lower.startsWith("data:image/gif;base64,");
     }
 
     @Transactional(readOnly = true)

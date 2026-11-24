@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface SafeImageProps {
   src?: string;
@@ -16,6 +16,10 @@ export function SafeImage({
   fallbackIcon = 'business',
 }: SafeImageProps) {
   const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setHasError(false);
+  }, [src]);
 
   if (!src || hasError) {
     const initials =

@@ -5,6 +5,7 @@ import { SafeImage } from '../components/common/SafeImage';
 import { ExecutiveReportModal } from '../components/modals/ExecutiveReportModal';
 import { MARCUS_AVANCE_AVATAR } from '../data/mockData';
 import { useApp } from '../context/AppContext';
+import { IS_MOCK_MODE } from '../services';
 
 export function DashboardPage() {
   const location = useLocation();
@@ -41,8 +42,12 @@ export function DashboardPage() {
     }, 800);
   };
 
+  const interviewCount = applications.filter(
+    (a) => a.status === 'interviewing' || a.status === 'offered'
+  ).length;
+
   return (
-    <MobileTabShell pageLabel="User Dashboard">
+    <MobileTabShell pageLabel="Candidate Dashboard">
       <div className="flex flex-col w-full">
         <div className="flex flex-col gap-space-lg px-gutter-sm sm:px-gutter max-w-4xl mx-auto w-full pb-space-2xl">
           {/* Welcome Header & Profile Strength */}
@@ -56,7 +61,7 @@ export function DashboardPage() {
                   <span className="text-2xl">👋</span>
                 </div>
                 <p className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-space-xs mt-0.5">
-                  <span>Staff Frontend Engineer</span>
+                  <span>{profile.title || profile.targetRoles[0] || 'Candidate'}</span>
                   <span className="w-1.5 h-1.5 rounded-full bg-outline-variant" />
                   <span className="inline-flex items-center gap-1 text-tertiary font-medium">
                     <span className="w-2 h-2 rounded-full bg-tertiary-fixed-dim animate-pulse" />
@@ -184,7 +189,7 @@ export function DashboardPage() {
               </div>
               <div>
                 <span className="font-headline-lg text-headline-lg text-on-surface">
-                  {activeAppsCount + 10}
+                  {IS_MOCK_MODE ? activeAppsCount + 10 : activeAppsCount}
                 </span>
                 <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
                   Applications Active
@@ -222,9 +227,11 @@ export function DashboardPage() {
                 </span>
               </div>
               <div>
-                <span className="font-headline-lg text-headline-lg text-on-surface">3</span>
+                <span className="font-headline-lg text-headline-lg text-on-surface">
+                  {IS_MOCK_MODE ? 3 : interviewCount}
+                </span>
                 <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                  Interview Invites
+                  Interview &amp; Offer Stages
                 </p>
               </div>
             </Link>
@@ -238,12 +245,12 @@ export function DashboardPage() {
                   <span className="material-symbols-outlined text-[20px]">bookmark</span>
                 </div>
                 <span className="font-label-sm text-label-sm bg-surface-container-high text-primary px-2 py-0.5 rounded-full">
-                  4 hiring now
+                  {jobs.length} live roles
                 </span>
               </div>
               <div>
                 <span className="font-headline-lg text-headline-lg text-on-surface">
-                  {26 + savedJobIds.length}
+                  {IS_MOCK_MODE ? 26 + savedJobIds.length : savedJobIds.length}
                 </span>
                 <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
                   Saved Roles
@@ -348,91 +355,170 @@ export function DashboardPage() {
               </Link>
             </div>
 
-            {/* Item 1 */}
-            <div className="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-space-sm">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-space-sm">
-                  <div className="w-10 h-10 rounded-lg bg-surface-container-lowest flex items-center justify-center font-bold text-primary shadow-xs">
-                    <span className="font-headline-sm text-headline-sm">A</span>
-                  </div>
-                  <div>
-                    <h3 className="font-headline-sm text-headline-sm text-on-surface">
-                      Apex Cloud Systems
-                    </h3>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant">
-                      Lead Systems Architect • Full-time Remote
-                    </p>
-                  </div>
+            {!IS_MOCK_MODE ? (
+              applications.length === 0 ? (
+                <div className="bg-surface-container-low rounded-xl p-space-md text-center flex flex-col items-center gap-2">
+                  <p className="font-label-md text-on-surface font-semibold">
+                    No submitted applications yet
+                  </p>
+                  <p className="font-body-sm text-on-surface-variant">
+                    Apply to a role to receive confirmation emails and track recruiter review stages here.
+                  </p>
+                  <Link
+                    className="mt-1 h-10 px-4 rounded-lg bg-primary text-on-primary font-label-md font-bold inline-flex items-center gap-1.5"
+                    to="/jobs"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">search</span>
+                    <span>Browse Open Roles</span>
+                  </Link>
                 </div>
-                <span className="font-label-sm text-label-sm bg-tertiary-fixed text-on-tertiary-fixed px-space-sm py-1 rounded-full font-semibold">
-                  Stage 4 of 5: Final Round
-                </span>
-              </div>
+              ) : (
+                applications.slice(0, 3).map((app) => (
+                  <div
+                    key={app.id}
+                    className="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-space-sm"
+                  >
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-space-sm">
+                        <div className="w-10 h-10 rounded-lg bg-surface-container-lowest flex items-center justify-center font-bold text-primary shadow-xs">
+                          <span className="font-headline-sm text-headline-sm">
+                            {app.company.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="font-headline-sm text-headline-sm text-on-surface">
+                            {app.company}
+                          </h3>
+                          <p className="font-body-sm text-body-sm text-on-surface-variant">
+                            {app.jobTitle} • {app.location}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="font-label-sm text-label-sm bg-tertiary-fixed text-on-tertiary-fixed px-space-sm py-1 rounded-full font-semibold">
+                        {app.stageBadge}
+                      </span>
+                    </div>
 
-              <div className="grid grid-cols-4 gap-2 pt-space-xs">
-                {['Applied', 'Recruiter', 'Tech Screen', 'System Design'].map((s, idx) => (
-                  <div key={s} className="flex flex-col gap-1">
-                    <div
-                      className={`h-2 rounded-full bg-secondary ${idx === 3 ? 'animate-pulse' : ''}`}
-                    />
-                    <span
-                      className={`font-label-sm text-label-sm truncate ${
-                        idx === 3 ? 'text-primary font-bold' : 'text-on-surface-variant'
-                      }`}
-                    >
-                      {s}
+                    <div className="grid grid-cols-4 gap-2 pt-space-xs">
+                      {app.stageSteps.map((step, idx) => {
+                        const completed = idx < app.stageNumber;
+                        const current = idx + 1 === app.stageNumber;
+                        return (
+                          <div key={step} className="flex flex-col gap-1">
+                            <div
+                              className={`h-2 rounded-full ${
+                                completed || current
+                                  ? `bg-secondary ${current ? 'animate-pulse' : ''}`
+                                  : 'bg-surface-container-highest'
+                              }`}
+                            />
+                            <span
+                              className={`font-label-sm text-label-sm truncate ${
+                                current
+                                  ? 'text-primary font-bold'
+                                  : completed
+                                    ? 'text-on-surface-variant'
+                                    : 'text-on-surface-variant/60'
+                              }`}
+                            >
+                              {step}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))
+              )
+            ) : (
+              <>
+                {/* Preview Item 1 */}
+                <div className="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-space-sm">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-space-sm">
+                      <div className="w-10 h-10 rounded-lg bg-surface-container-lowest flex items-center justify-center font-bold text-primary shadow-xs">
+                        <span className="font-headline-sm text-headline-sm">A</span>
+                      </div>
+                      <div>
+                        <h3 className="font-headline-sm text-headline-sm text-on-surface">
+                          Apex Cloud Systems
+                        </h3>
+                        <p className="font-body-sm text-body-sm text-on-surface-variant">
+                          Lead Systems Architect • Full-time Remote
+                        </p>
+                      </div>
+                    </div>
+                    <span className="font-label-sm text-label-sm bg-tertiary-fixed text-on-tertiary-fixed px-space-sm py-1 rounded-full font-semibold">
+                      Stage 4 of 5: Final Round
                     </span>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Item 2 */}
-            <div className="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-space-sm">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-space-sm">
-                  <div className="w-10 h-10 rounded-lg bg-surface-container-lowest flex items-center justify-center font-bold text-secondary shadow-xs">
-                    <span className="font-headline-sm text-headline-sm">S</span>
-                  </div>
-                  <div>
-                    <h3 className="font-headline-sm text-headline-sm text-on-surface">Stripe</h3>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant">
-                      Staff UI Infrastructure Engineer • Seattle / Hybrid
-                    </p>
+                  <div className="grid grid-cols-4 gap-2 pt-space-xs">
+                    {['Applied', 'Recruiter', 'Tech Screen', 'System Design'].map((s, idx) => (
+                      <div key={s} className="flex flex-col gap-1">
+                        <div
+                          className={`h-2 rounded-full bg-secondary ${idx === 3 ? 'animate-pulse' : ''}`}
+                        />
+                        <span
+                          className={`font-label-sm text-label-sm truncate ${
+                            idx === 3 ? 'text-primary font-bold' : 'text-on-surface-variant'
+                          }`}
+                        >
+                          {s}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <span className="font-label-sm text-label-sm bg-surface-container-high text-primary px-space-sm py-1 rounded-full font-semibold">
-                  Stage 2 of 4: Tech Screen
-                </span>
-              </div>
 
-              <div className="grid grid-cols-4 gap-2 pt-space-xs">
-                {['Applied', 'Tech Screen', 'Architecture', 'Executive Offer'].map((s, idx) => (
-                  <div key={s} className="flex flex-col gap-1">
-                    <div
-                      className={`h-2 rounded-full ${
-                        idx === 0
-                          ? 'bg-secondary'
-                          : idx === 1
-                          ? 'bg-secondary animate-pulse'
-                          : 'bg-surface-container-highest'
-                      }`}
-                    />
-                    <span
-                      className={`font-label-sm text-label-sm truncate ${
-                        idx === 1
-                          ? 'text-primary font-bold'
-                          : idx > 1
-                          ? 'text-on-surface-variant/60'
-                          : 'text-on-surface-variant'
-                      }`}
-                    >
-                      {s}
+                {/* Preview Item 2 */}
+                <div className="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-space-sm">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-space-sm">
+                      <div className="w-10 h-10 rounded-lg bg-surface-container-lowest flex items-center justify-center font-bold text-secondary shadow-xs">
+                        <span className="font-headline-sm text-headline-sm">S</span>
+                      </div>
+                      <div>
+                        <h3 className="font-headline-sm text-headline-sm text-on-surface">Stripe</h3>
+                        <p className="font-body-sm text-body-sm text-on-surface-variant">
+                          Staff UI Infrastructure Engineer • Seattle / Hybrid
+                        </p>
+                      </div>
+                    </div>
+                    <span className="font-label-sm text-label-sm bg-surface-container-high text-primary px-space-sm py-1 rounded-full font-semibold">
+                      Stage 2 of 4: Tech Screen
                     </span>
                   </div>
-                ))}
-              </div>
-            </div>
+
+                  <div className="grid grid-cols-4 gap-2 pt-space-xs">
+                    {['Applied', 'Tech Screen', 'Architecture', 'Executive Offer'].map((s, idx) => (
+                      <div key={s} className="flex flex-col gap-1">
+                        <div
+                          className={`h-2 rounded-full ${
+                            idx === 0
+                              ? 'bg-secondary'
+                              : idx === 1
+                              ? 'bg-secondary animate-pulse'
+                              : 'bg-surface-container-highest'
+                          }`}
+                        />
+                        <span
+                          className={`font-label-sm text-label-sm truncate ${
+                            idx === 1
+                              ? 'text-primary font-bold'
+                              : idx > 1
+                              ? 'text-on-surface-variant/60'
+                              : 'text-on-surface-variant'
+                          }`}
+                        >
+                          {s}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Curated For Your Experience */}
